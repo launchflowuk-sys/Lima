@@ -25,12 +25,19 @@ Done:
 - Docker (Dockerfile, docker-compose: postgres, redis, migrate, web, worker), `.env.example`
 - Dashboard shell + nav + honest empty states
 
-Remaining in Phase 1 (next session):
-- Auth: login / forgot / reset / accept-invitation, session cookies, middleware
-- Server-side tenant-isolation guard used by every query + isolation tests
+Also done:
+- **Auth core**: bcrypt password hashing, DB-backed sessions (opaque token, only SHA-256 hash
+  stored), `getCurrentUser`/`requireUser`, session cookie constant
+- **Tenant-isolation guard** (`auth/access.ts`): AuthUser model + roleForBusiness /
+  hasBusinessAccess / assertBusinessAccess / assertPermission / accessibleBusinessIds
+- **Seed script** (`pnpm db:seed`) — first org + owner, idempotent
+- **Vitest** + 17 passing tests: tenant isolation, RBAC matrix, AES-GCM round-trip/tamper,
+  password hash, session token hashing
+
+Remaining in Phase 1 (next):
+- Auth UI + handlers: login / logout / forgot / reset / accept-invitation + `middleware.ts` route guard
 - shadcn/ui component set wired in
-- Seed script: first organisation + owner user
-- Vitest config + first isolation/rbac unit tests
+- DB-backed integration test for login + session round-trip
 
 ## ⬜ Phase 2 — Gmail (OAuth, sync, Pub/Sub watch, send)
 ## ⬜ Phase 3 — Microsoft (OAuth, Graph subscriptions, delta, send)
