@@ -20,23 +20,14 @@ services:
     volumes:
       - redis-data:/data
 
-  # One-shot migration runner. Coolify can run this before starting web/worker.
-  # Needs the full .env (not just DATABASE_URL): env.ts validates the whole schema on first access.
-  migrate:
-    build:
-      context: .
-    command: ["pnpm", "db:migrate"]
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: "no"
-
   web:
     build:
       context: .
     restart: unless-stopped
-    command: ["pnpm", "start"]
+    # Run DB migrations, then start. Kept in the long-running web service (instead of a
+    # one-shot `migrate` service) so nothing exits 0 and gets read as "unhealthy" by the
+    # orchestrator. env.ts validates the whole schema on first access, so it needs full .env.
+    command: ["sh", "-c", "pnpm db:migrate && pnpm start"]
     env_file: .env
     ports:
       - "3000:3000"
