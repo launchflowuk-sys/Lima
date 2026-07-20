@@ -8,6 +8,13 @@
       "when": 1784557283154,
       "tag": "0000_salty_kronos",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784576170690,
+      "tag": "0001_elite_junta",
+      "breakpoints": true
     }
   ]
 }

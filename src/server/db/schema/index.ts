@@ -10,4 +10,5 @@ export * from "./tenancy";
 export * from "./mailboxes";
 export * from "./email";
 export * from "./ai";
+export * from "./knowledge";
 export * from "./governance";

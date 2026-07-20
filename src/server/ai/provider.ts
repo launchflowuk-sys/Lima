@@ -52,4 +52,10 @@ export interface ClassifyResult {
 export interface AiProvider {
   classify(input: ClassifyInput): Promise<ClassifyResult>;
   generateReply(input: GenerateReplyInput): Promise<GenerateReplyResult>;
+  /**
+   * Embed one or more texts for knowledge retrieval. OPTIONAL: a provider without embeddings simply
+   * omits this, and retrieval falls back to deterministic keyword scoring. Returns one vector per
+   * input, in order.
+   */
+  embedText?(texts: string[]): Promise<number[][]>;
 }

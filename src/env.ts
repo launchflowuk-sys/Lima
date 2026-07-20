@@ -22,6 +22,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL_CLASSIFICATION: z.string().default("gpt-4o-mini"),
   OPENAI_MODEL_REPLY: z.string().default("gpt-4o"),
+  OPENAI_MODEL_EMBEDDING: z.string().default("text-embedding-3-small"),
 
   // Google / Gmail
   GOOGLE_CLIENT_ID: z.string().optional(),

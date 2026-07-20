@@ -64,4 +64,15 @@ export class OpenAiProvider implements AiProvider {
       promptVersion: REPLY_PROMPT_VERSION,
     };
   }
+
+  /** Embed texts for knowledge retrieval. Empty input short-circuits (no API call). */
+  async embedText(texts: string[]): Promise<number[][]> {
+    if (texts.length === 0) return [];
+    const res = await getClient().embeddings.create({
+      model: env.OPENAI_MODEL_EMBEDDING,
+      input: texts,
+    });
+    // The API returns items with an `index`; sort so output order matches input order.
+    return [...res.data].sort((a, b) => a.index - b.index).map((d) => d.embedding as number[]);
+  }
 }

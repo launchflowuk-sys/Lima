@@ -6,6 +6,7 @@ import { classifyThread } from "@/server/ai/classify";
 import { evaluateAutoSend } from "@/server/ai/safety";
 import { getAiProvider } from "@/server/ai";
 import type { AiUsage, ThreadMessageForAi } from "@/server/ai/provider";
+import { retrieveBusinessContext } from "@/server/knowledge/service";
 import { recordAudit } from "@/server/audit/log";
 
 async function recordAiUsage(businessId: string, purpose: string, usage: AiUsage) {
@@ -41,8 +42,13 @@ export async function generateDraftForThread(user: AuthUser, threadId: string) {
     body: m.bodyText ?? m.snippet ?? "",
   }));
 
-  // Knowledge retrieval feeds businessContext in a later phase; empty for now.
-  const businessContext = "";
+  // Retrieve the approved business facts relevant to this thread. The query is the latest inbound
+  // message plus the subject — that's what the reply must actually address. Only THIS business's
+  // knowledge is ever loaded (tenant isolation). Empty string if the business has no knowledge yet.
+  const retrievalQuery = [thread.subject, latestInbound.bodyText ?? latestInbound.snippet ?? ""]
+    .filter(Boolean)
+    .join("\n");
+  const { context: businessContext, usedChunkIds } = await retrieveBusinessContext(thread.businessId, retrievalQuery);
   const provider = getAiProvider();
 
   const { classification, usage: clsUsage, promptVersion: clsVer } = await classifyThread(provider, {
@@ -92,7 +98,7 @@ export async function generateDraftForThread(user: AuthUser, threadId: string) {
       bodyText: reply.bodyText,
       autoSendEligible: decision.eligible,
       autoSendBlockedReason: decision.reason,
-      knowledgeUsed: [],
+      knowledgeUsed: usedChunkIds,
     })
     .returning();
   await recordAiUsage(thread.businessId, "reply", reply.usage);

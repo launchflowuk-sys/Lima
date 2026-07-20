@@ -49,3 +49,11 @@ export const riskLevelEnum = pgEnum("email_risk", ["low", "medium", "high", "pro
 
 // ─── Reply drafts / approvals ────────────────────────────────────────────────────
 export const draftStatusEnum = pgEnum("draft_status", ["pending_approval", "approved", "rejected", "sent", "send_failed", "auto_sent"]);
+
+// ─── Knowledge base (spec §10 / §12) ─────────────────────────────────────────────
+// Where a knowledge fact came from — drives how much a human vouched for it.
+export const knowledgeSourceEnum = pgEnum("knowledge_source", ["manual", "document", "faq", "website", "imported"]);
+// Kind of a knowledge entry, so retrieval can weight core facts above one-off notes.
+export const knowledgeKindEnum = pgEnum("knowledge_kind", ["fact", "faq", "policy", "service", "pricing", "hours", "note"]);
+// Lifecycle of an uploaded document as it is ingested + chunked.
+export const knowledgeDocumentStatusEnum = pgEnum("knowledge_document_status", ["pending", "processing", "ready", "failed"]);

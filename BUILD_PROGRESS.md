@@ -96,6 +96,23 @@ Remaining in Phase 1 (next):
   provider — real for IMAP/SMTP), Reject. Edits stored as immutable reply_versions.
 - Sent reply is written back as an outbound message; thread → waiting_customer; every step audited.
 - The whole spine now runs: receive (IMAP) → read → classify+draft (AI) → approve → send.
+## ✅ Phase 6b — Knowledge base + retrieval (built; runs now, no API key needed)
+- **Schema**: `business_knowledge_entries` (approved facts, kind/priority/tags/active), `knowledge_documents`
+  (pasted docs → chunked), `knowledge_chunks` (one retrieval table for both entries & docs, optional
+  jsonb `embedding` so no pgvector needed), `email_templates`. Migration `0001_elite_junta.sql`.
+- **Retrieval** (`knowledge/retrieval.ts`, pure + 14 tests): tokenise → keyword overlap score, plus
+  cosine similarity when embeddings exist; small capped priority bonus so core facts are never starved
+  but can't outrank a direct match; `assembleContext` builds a char-budgeted context + records used ids.
+- **Service** (`knowledge/service.ts`): entry CRUD, paste-document + `chunkText`, best-effort embedding
+  on write (degrades to keyword if no OPENAI_API_KEY), `retrieveBusinessContext(businessId, query)` —
+  loads ONLY that business's chunks (tenant isolation), skips inactive entries.
+- **Wired into drafting**: `generateDraftForThread` now retrieves real business context from the query
+  (subject + latest inbound) instead of an empty string, and records `knowledgeUsed` chunk ids on the draft.
+- **UI**: `/knowledge` page — approved-facts table, documents table, add-fact + paste-document forms
+  (per-business selector), delete. Removes one of the 404 nav links.
+- **API**: `GET/POST /api/v1/knowledge` for the mobile app.
+- Optional `embedText` added to the `AiProvider` interface + OpenAI impl (text-embedding-3-small).
+
 ## ⬜ Phase 7 — Rules engine + auto-send policy + follow-ups + escalations
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
 
