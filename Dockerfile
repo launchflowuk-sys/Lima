@@ -9,11 +9,13 @@ RUN corepack enable && corepack prepare pnpm@11.12.0 --activate
 WORKDIR /app
 
 # --- deps: install with a frozen lockfile for reproducible builds ---
-# pnpm-workspace.yaml carries onlyBuiltDependencies (the build-script allowlist); without it pnpm 10
-# hard-fails with ERR_PNPM_IGNORED_BUILDS on esbuild/sharp/etc.
+# pnpm 11 hard-fails a fresh install (ERR_PNPM_IGNORED_BUILDS) on native deps' build scripts even when
+# they're allow-listed in pnpm-workspace.yaml. We disable that gate, then explicitly rebuild the native
+# packages we actually need (esbuild for tsx/worker, sharp for image opt, oxide for Tailwind v4).
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --config.strictDepBuilds=false \
+ && pnpm rebuild esbuild sharp @tailwindcss/oxide msgpackr-extract unrs-resolver
 
 # --- build: compile the Next app ---
 FROM base AS build
