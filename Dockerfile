@@ -6,8 +6,10 @@ RUN corepack enable
 WORKDIR /app
 
 # --- deps: install with a frozen lockfile for reproducible builds ---
+# pnpm-workspace.yaml carries onlyBuiltDependencies (the build-script allowlist); without it pnpm 10
+# hard-fails with ERR_PNPM_IGNORED_BUILDS on esbuild/sharp/etc.
 FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # --- build: compile the Next app ---
