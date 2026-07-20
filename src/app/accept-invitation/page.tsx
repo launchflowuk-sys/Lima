@@ -14,8 +14,8 @@ export default async function AcceptInvitationPage({
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="mb-6">
-          <span className="font-bold tracking-tight">LaunchFlow</span>
-          <span className="ml-1.5 text-sm font-medium text-slate-400">Inbox</span>
+          <span className="font-bold tracking-tight">Agent</span>
+          <span className="ml-1.5 text-sm font-medium text-slate-400">Lima</span>
         </div>
 
         {!invite ? (

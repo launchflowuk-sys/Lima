@@ -33,7 +33,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <p className="text-lg font-bold tracking-tight text-slate-900">LaunchFlow <span className="text-slate-400 font-medium">Inbox</span></p>
+          <p className="text-lg font-bold tracking-tight text-slate-900">Agent <span className="text-slate-400 font-medium">Lima</span></p>
           <p className="mt-1 text-sm text-slate-500">Sign in to your workspace</p>
         </div>
         <form onSubmit={onSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">

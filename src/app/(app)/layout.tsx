@@ -37,8 +37,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <div className="flex">
         <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r border-slate-200 bg-white">
           <div className="h-16 flex items-center px-5 border-b border-slate-200">
-            <span className="font-bold tracking-tight">LaunchFlow</span>
-            <span className="ml-1.5 text-sm font-medium text-slate-400">Inbox</span>
+            <span className="font-bold tracking-tight">Agent</span>
+            <span className="ml-1.5 text-sm font-medium text-slate-400">Lima</span>
           </div>
           <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
             {NAV.map((item) => (
