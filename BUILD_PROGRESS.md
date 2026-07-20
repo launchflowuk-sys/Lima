@@ -99,6 +99,22 @@ Remaining in Phase 1 (next):
 ## ⬜ Phase 7 — Rules engine + auto-send policy + follow-ups + escalations
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
 
+## ✅ Mobile-ready JSON API (`/api/v1`) — built
+The product ships as a **web dashboard + native iOS/Android app (Expo → EAS)**. Native clients can't
+use Next server actions, so all logic lives in the services layer and is exposed over a versioned
+JSON API with **Bearer-token auth** (same opaque-token session model as the web cookie):
+- `getUserFromRequest` (Bearer) + `loadAuthUser` shared with the web path; `withApiUser` wrapper
+- Endpoints: `POST /api/v1/auth/login` (→ token+user), `GET /auth/me`, `GET /inbox`,
+  `GET /threads/[id]`, `GET /approvals`, `POST /drafts/[id]/approve`, `POST /drafts/[id]/reject`
+- Native fetch isn't subject to CORS, so no CORS layer needed for the app.
+
+## ⬜ Mobile app (Expo) — next
+- Expo Router + TS app (`apps/mobile` or sibling), typed API client, secure token storage
+  (expo-secure-store), login → inbox → thread → approve/reject, Expo push for approval alerts
+- EAS: `eas.json` build profiles, `app.config.ts` (bundle id, icons, splash), `eas build`/`eas submit`
+  to **TestFlight** (needs Apple Developer + App Store Connect API key) and **Play internal testing**
+  (needs Play Developer + service-account JSON). Credentials via `eas login`/EAS secrets — never in code.
+
 ## Schema domains still to add (spec §10)
 knowledge (+ documents/chunks/embeddings/templates), automation (rules/conditions/actions/
 executions), follow-ups, contacts (+ profiles/notes/consents/interactions), data_retention_rules.
