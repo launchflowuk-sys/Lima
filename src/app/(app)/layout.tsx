@@ -2,12 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "@/server/auth/current-user";
+import { unreadNotificationCount } from "@/server/notifications/service";
 import { SignOutButton } from "./sign-out-button";
 
 /** Primary navigation (spec §5). Rendered server-side; active-state + auth gating come in the auth phase. */
 const NAV: Array<{ href: string; label: string }> = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/inbox", label: "Inbox" },
+  { href: "/notifications", label: "Notifications" },
   { href: "/approvals", label: "Approvals" },
   { href: "/follow-ups", label: "Follow-ups" },
   { href: "/contacts", label: "Contacts" },
@@ -28,6 +30,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+  const unread = await unreadNotificationCount(user);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -42,9 +45,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.href === "/notifications" && unread > 0 && (
+                  <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>

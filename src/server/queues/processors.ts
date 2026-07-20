@@ -1,10 +1,11 @@
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, isNull, lte } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { mailboxes, emailThreads, replyDrafts, followUps } from "@/server/db/schema";
 import { env } from "@/env";
 import { logger } from "@/server/logger";
 import { syncImapMailbox } from "@/server/email/sync/imap-sync";
 import { generateDraftForThreadSystem } from "@/server/drafts/service";
+import { notifyUser } from "@/server/notifications/service";
 import { enqueueDrafts, getSyncQueue, type SyncJob, type DraftJob } from "./queues";
 
 /**
@@ -59,13 +60,30 @@ export async function processDraftJob(data: DraftJob): Promise<void> {
 }
 
 /**
- * Follow-up scan. Finds pending follow-ups now due. Delivery (in-app/email/push notification) is wired
- * in the notifications phase; for now it surfaces the count so the pipeline is observable.
+ * Follow-up scan. Notifies the creator of each pending follow-up that has just come due, exactly once
+ * (guarded by notifiedAt so re-runs don't re-notify). Emails a copy too when SMTP is configured.
  */
 export async function processFollowUpScan(): Promise<void> {
   const due = await db
-    .select({ id: followUps.id })
+    .select()
     .from(followUps)
-    .where(and(eq(followUps.status, "pending"), lte(followUps.dueAt, new Date())));
-  if (due.length) logger.info({ due: due.length }, "queue: follow-ups due (notification delivery pending)");
+    .where(and(eq(followUps.status, "pending"), lte(followUps.dueAt, new Date()), isNull(followUps.notifiedAt)));
+
+  for (const f of due) {
+    if (f.createdByUserId) {
+      await notifyUser({
+        userId: f.createdByUserId,
+        businessId: f.businessId,
+        type: "follow_up_due",
+        title: "Follow-up due",
+        body: f.reason,
+        entityType: "follow_up",
+        entityId: f.id,
+        linkPath: "/follow-ups",
+        alsoEmail: true,
+      });
+    }
+    await db.update(followUps).set({ notifiedAt: new Date() }).where(eq(followUps.id, f.id));
+  }
+  if (due.length) logger.info({ notified: due.length }, "queue: follow-up notifications sent");
 }

@@ -1,9 +1,10 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/server/db/client";
-import { automationRules, automationExecutions, emailThreads } from "@/server/db/schema";
+import { automationRules, automationExecutions, emailThreads, businesses, users } from "@/server/db/schema";
 import { type AuthUser, assertBusinessAccess, assertPermission } from "@/server/auth/access";
 import { listBusinessesForUser, type Business } from "@/server/businesses/service";
 import { recordAudit } from "@/server/audit/log";
+import { notifyUser } from "@/server/notifications/service";
 import { evaluateRules, type RuleContext, type RuleEvaluation, type RuleForEval } from "./engine";
 import type { RuleConditions, RuleActions } from "./types";
 
@@ -132,6 +133,11 @@ export async function applyAutomationForThread(params: {
       if (evaluation.assignToUserId && evaluation.assignToUserId !== thread.assignedUserId) patch.assignedUserId = evaluation.assignToUserId;
       if (evaluation.escalate && thread.status !== "escalated") patch.status = "escalated";
       if (Object.keys(patch).length > 0) await db.update(emailThreads).set(patch).where(eq(emailThreads.id, params.threadId));
+
+      // On a fresh escalation, alert a human: the assignee if there is one, otherwise the org owners.
+      if (evaluation.escalate && thread.status !== "escalated") {
+        await notifyEscalation(params.businessId, params.threadId, thread.assignedUserId, thread.subject);
+      }
     }
 
     await db.insert(automationExecutions).values({
@@ -149,4 +155,31 @@ export async function applyAutomationForThread(params: {
   }
 
   return evaluation;
+}
+
+/** Notify the right humans that a thread was escalated: the assignee, else the owning org's owners. */
+async function notifyEscalation(businessId: string, threadId: string, assignedUserId: string | null, subject: string | null): Promise<void> {
+  const targets = new Set<string>();
+  if (assignedUserId) {
+    targets.add(assignedUserId);
+  } else {
+    const [biz] = await db.select({ organisationId: businesses.organisationId }).from(businesses).where(eq(businesses.id, businessId)).limit(1);
+    if (biz) {
+      const owners = await db.select({ id: users.id }).from(users).where(and(eq(users.organisationId, biz.organisationId), eq(users.isOwner, true)));
+      for (const o of owners) targets.add(o.id);
+    }
+  }
+  for (const userId of targets) {
+    await notifyUser({
+      userId,
+      businessId,
+      type: "thread_escalated",
+      title: "A conversation was escalated",
+      body: subject ? `Escalated: ${subject}` : "A conversation needs a human.",
+      entityType: "email_thread",
+      entityId: threadId,
+      linkPath: `/inbox/${threadId}`,
+      alsoEmail: true,
+    });
+  }
 }

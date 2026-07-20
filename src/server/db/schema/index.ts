@@ -13,4 +13,5 @@ export * from "./ai";
 export * from "./knowledge";
 export * from "./automation";
 export * from "./contacts";
+export * from "./notifications";
 export * from "./governance";
