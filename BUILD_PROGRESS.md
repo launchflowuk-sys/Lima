@@ -34,10 +34,22 @@ Also done:
 - **Vitest** + 17 passing tests: tenant isolation, RBAC matrix, AES-GCM round-trip/tamper,
   password hash, session token hashing
 
+Also done:
+- **Login flow works end to end**: `/login` page, `POST /api/auth/login` (verify → session cookie),
+  `POST /api/auth/logout`, `proxy.ts` route guard (redirects cookieless requests), dashboard layout
+  is now an auth-gated server component showing the signed-in user + sign-out.
+- Lazy DB client (pool created on first query) so `next build` needs no live secrets.
+- **Production build passes clean** (no warnings); `next build` verified.
+
 Remaining in Phase 1 (next):
-- Auth UI + handlers: login / logout / forgot / reset / accept-invitation + `middleware.ts` route guard
-- shadcn/ui component set wired in
-- DB-backed integration test for login + session round-trip
+- forgot-password / reset-password / accept-invitation pages + handlers (need email sending)
+- shadcn/ui component set wired in (login/dashboard currently use hand-rolled Tailwind)
+- DB-backed integration test: seed → login → session → /dashboard
+
+## How to run locally
+`cp .env.example .env` → set `SESSION_SECRET`, `ENCRYPTION_KEY` (see README) →
+`docker compose up -d postgres redis` → `pnpm db:migrate` → `SEED_OWNER_PASSWORD=... pnpm db:seed` →
+`pnpm dev` → sign in at http://localhost:3000/login.
 
 ## ⬜ Phase 2 — Gmail (OAuth, sync, Pub/Sub watch, send)
 ## ⬜ Phase 3 — Microsoft (OAuth, Graph subscriptions, delta, send)

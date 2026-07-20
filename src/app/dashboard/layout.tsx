@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { getCurrentUser } from "@/server/auth/current-user";
+import { SignOutButton } from "./sign-out-button";
 
 /** Primary navigation (spec §5). Rendered server-side; active-state + auth gating come in the auth phase. */
 const NAV: Array<{ href: string; label: string }> = [
@@ -19,7 +22,13 @@ const NAV: Array<{ href: string; label: string }> = [
   { href: "/settings", label: "Settings" },
 ];
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  // Server-side auth gate. The middleware bounces cookieless requests; this validates the session
+  // (expiry, active user) and gives the layout the real user.
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="flex">
@@ -39,6 +48,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
+          <div className="border-t border-slate-200 p-3">
+            <p className="px-3 pb-1 text-xs font-medium text-slate-900 truncate">{displayName}</p>
+            <p className="px-3 pb-2 text-xs text-slate-400">{user.isOwner ? "Owner" : `${user.access.length} business${user.access.length === 1 ? "" : "es"}`}</p>
+            <SignOutButton />
+          </div>
         </aside>
         <main className="flex-1 md:pl-60">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">{children}</div>
