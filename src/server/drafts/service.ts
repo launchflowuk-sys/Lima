@@ -7,6 +7,7 @@ import { evaluateAutoSend } from "@/server/ai/safety";
 import { getAiProvider } from "@/server/ai";
 import type { AiUsage, ThreadMessageForAi } from "@/server/ai/provider";
 import { retrieveBusinessContext } from "@/server/knowledge/service";
+import { getContactContext } from "@/server/contacts/service";
 import { applyAutomationForThread } from "@/server/automation/service";
 import { autoSendDraft } from "@/server/approvals/service";
 import { recordAudit } from "@/server/audit/log";
@@ -51,7 +52,10 @@ export async function generateDraftForThread(user: AuthUser, threadId: string) {
   const retrievalQuery = [thread.subject, latestInbound.bodyText ?? latestInbound.snippet ?? ""]
     .filter(Boolean)
     .join("\n");
-  const { context: businessContext, usedChunkIds } = await retrieveBusinessContext(thread.businessId, retrievalQuery);
+  const { context: knowledgeContext, usedChunkIds } = await retrieveBusinessContext(thread.businessId, retrievalQuery);
+  // Add customer memory (prior contact + human notes) so the reply is informed by who's writing.
+  const contactContext = await getContactContext(thread.businessId, latestInbound.fromAddress ?? null);
+  const businessContext = [knowledgeContext, contactContext].filter(Boolean).join("\n\n");
   const provider = getAiProvider();
 
   const { classification, usage: clsUsage, promptVersion: clsVer } = await classifyThread(provider, {

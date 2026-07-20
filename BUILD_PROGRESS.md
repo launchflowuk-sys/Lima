@@ -131,7 +131,19 @@ Remaining in Phase 1 (next):
   `ai.configure`). Kills another 404.
 - **API**: `GET /api/v1/automation`.
 
-## ⬜ Phase 7b — Follow-ups + contacts/customer memory + escalation surfacing
+## ✅ Phase 7b — Contacts (customer memory) + follow-ups
+- **Schema**: `contacts` (per business, unique on (business,email), messageCount/notes/tags/first·lastSeen),
+  `follow_ups` (dueAt/reason/status, thread + contact links). Migration `0003_ambiguous_manta.sql`.
+- **Contacts service**: `upsertContactFromInbound` — atomic onConflict upsert (bumps count, advances
+  lastSeen, fills name only if empty), called from IMAP ingest for every inbound sender. `getContactContext`
+  feeds prior-contact + human notes into the reply prompt (wired into `generateDraftForThread`). Notes edit.
+- **Follow-ups service**: create/list-pending/complete/cancel (requires `conversation.note`).
+- **UI**: `/contacts` (table + inline notes editor) and `/follow-ups` (pending list with overdue highlight,
+  Done/Cancel, schedule form). Kills two more 404 nav links.
+- **API**: `GET /api/v1/contacts`, `GET/POST /api/v1/follow-ups`.
+- NOTE: a background job to *notify* on due follow-ups lands with the notifications phase; data + UI are here.
+
+## ⬜ Phase 8 — Notifications (in-app/email/SMS/push) + analytics + BullMQ queues + remaining pages
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
 
 ## ✅ Mobile-ready JSON API (`/api/v1`) — built

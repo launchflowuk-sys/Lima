@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { emailThreads, emailMessages, emailParticipants, emailAttachments, mailboxSyncStates, mailboxHealthEvents } from "@/server/db/schema";
 import { decryptSecret } from "@/server/security/encryption";
+import { upsertContactFromInbound } from "@/server/contacts/service";
 import { logger } from "@/server/logger";
 import type { mailboxes } from "@/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
@@ -181,6 +182,15 @@ async function storeMessage(mailbox: Mailbox, parsed: ParsedMail, uid: number): 
     await db.insert(emailParticipants).values(
       participantRows.map((p) => ({ messageId: message.id, role: p.role, address: p.address, name: p.name })),
     );
+  }
+
+  // Customer memory: record the sender as a contact on inbound mail (spec §17).
+  if (direction === "inbound" && from?.address) {
+    try {
+      await upsertContactFromInbound({ businessId: mailbox.businessId, email: from.address, name: from.name, seenAt: sentAt });
+    } catch (err) {
+      logger.warn({ err, mailboxId: mailbox.id }, "Failed to upsert contact from inbound message");
+    }
   }
 
   if (parsed.attachments?.length) {

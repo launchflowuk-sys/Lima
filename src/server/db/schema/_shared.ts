@@ -57,3 +57,6 @@ export const knowledgeSourceEnum = pgEnum("knowledge_source", ["manual", "docume
 export const knowledgeKindEnum = pgEnum("knowledge_kind", ["fact", "faq", "policy", "service", "pricing", "hours", "note"]);
 // Lifecycle of an uploaded document as it is ingested + chunked.
 export const knowledgeDocumentStatusEnum = pgEnum("knowledge_document_status", ["pending", "processing", "ready", "failed"]);
+
+// ─── Follow-ups (spec §18) ───────────────────────────────────────────────────────
+export const followUpStatusEnum = pgEnum("follow_up_status", ["pending", "completed", "cancelled"]);
