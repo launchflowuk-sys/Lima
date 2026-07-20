@@ -51,7 +51,15 @@ Remaining in Phase 1 (next):
 `docker compose up -d postgres redis` → `pnpm db:migrate` → `SEED_OWNER_PASSWORD=... pnpm db:seed` →
 `pnpm dev` → sign in at http://localhost:3000/login.
 
-## ⬜ Phase 2 — Gmail (OAuth, sync, Pub/Sub watch, send)
+## ✅ Businesses + "connect any inbox" (IMAP/SMTP) — done
+- Route group `(app)` = shared auth-gated shell for all top-level pages (/dashboard, /businesses, /mailboxes…)
+- **Businesses**: tenant-scoped list + owner create-business (server action, audited)
+- **Mailboxes**: tenant-scoped list + **Connect IMAP/SMTP inbox** flow — encrypts IMAP+SMTP passwords,
+  live-verifies via the provider (SMTP verify), records status + health event + audit; delete mailbox.
+  This is the headline "add any inbox" feature working end to end (no cloud creds needed).
+- Services: `businesses/service.ts`, `mailboxes/service.ts`, `audit/log.ts` — all business-scoped.
+
+## ⬜ Phase 2 — Gmail (OAuth, sync, Pub/Sub watch, send) — NEEDS Google Cloud client id/secret + Pub/Sub
 ## ⬜ Phase 3 — Microsoft (OAuth, Graph subscriptions, delta, send)
 ## ⬜ Phase 3b — Generic IMAP/SMTP sync (poll loop, thread fetch) — send already works
 ## ⬜ Phase 4 — Unified inbox + conversation workspace
