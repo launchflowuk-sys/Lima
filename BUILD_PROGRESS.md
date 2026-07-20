@@ -63,7 +63,19 @@ Remaining in Phase 1 (next):
 ## ⬜ Phase 3 — Microsoft (OAuth, Graph subscriptions, delta, send)
 ## ⬜ Phase 3b — Generic IMAP/SMTP sync (poll loop, thread fetch) — send already works
 ## ⬜ Phase 4 — Unified inbox + conversation workspace
-## ⬜ Phase 5 — AI (classification schema, entities, knowledge retrieval, draft, validation)
+## 🟡 Phase 5 — AI classification core done (needs OPENAI_API_KEY to run live)
+- Zod `ClassificationSchema` derived from the DB enums (can't drift); structured output per spec §11
+- `AiProvider` adapter interface + `OpenAiProvider` (JSON mode → schema-validated)
+- Prompt with system/data separation + explicit prompt-injection defence (spec §22)
+- **Auto-send safety policy** (`safety.ts`, spec §16): pure `evaluateAutoSend` — blocks complaints/
+  refunds/payments/contracts, high/prohibited risk, angry/threatening, low confidence, escalations;
+  can only ever *reduce* the model's autoSendEligible, never grant it
+- `classifyThread` applies the policy over the model's output
+- 10 new tests (safety matrix, schema validation, policy-over-model) — 27 total, all passing
+- TODO next: knowledge retrieval to feed businessContext, reply-draft generation, persistence to
+  email_classifications + ai_usage_records (wired once ingestion produces messages)
+
+## ⬜ Phase 5b — Reply draft generation + factual validation
 ## ⬜ Phase 6 — Approval workflow + audit
 ## ⬜ Phase 7 — Rules engine + auto-send policy + follow-ups + escalations
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
