@@ -9,3 +9,9 @@ web-build/
 /android
 # Local env
 .env*.local
+# Store credentials — NEVER commit these
+credentials/
+*.p8
+*.p12
+*.mobileprovision
+*-service-account.json
