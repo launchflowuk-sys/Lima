@@ -23,6 +23,10 @@
         "ascApiKeyId": "2J2YAD9YTJ",
         "ascApiKeyIssuerId": "252f4cf6-a5b5-4d27-bba5-1cdb31a4db1a",
         "appleTeamId": "64GY32R9Y2"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./credentials/play-service-account.json",
+        "track": "internal"
       }
     }
   }
