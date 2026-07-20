@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "LaunchFlow Inbox",
+    "name": "Agent Lima",
     "slug": "launchflow-inbox",
     "scheme": "launchflowinbox",
+    "owner": "shoji147",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -15,9 +16,17 @@
       "package": "com.launchflow.inbox",
       "edgeToEdgeEnabled": true
     },
-    "plugins": ["expo-router", "expo-status-bar", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store"
+    ],
     "extra": {
-      "apiUrl": "http://localhost:3000"
+      "apiUrl": "https://agentlima.com",
+      "router": {},
+      "eas": {
+        "projectId": "d341b11d-6ae8-43f5-870f-27a2ffc17ca6"
+      }
     }
   }
 }
