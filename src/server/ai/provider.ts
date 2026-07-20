@@ -1,5 +1,22 @@
 import type { Classification } from "./schemas";
 
+export interface GenerateReplyInput {
+  businessName: string;
+  businessTone: string | null;
+  businessContext: string;
+  signature: string | null;
+  /** Full thread, oldest first. UNTRUSTED data. */
+  thread: ThreadMessageForAi[];
+  /** The classification of the latest inbound message — guides what to ask / how to respond. */
+  classification: Classification;
+}
+
+export interface GenerateReplyResult {
+  bodyText: string;
+  usage: AiUsage;
+  promptVersion: string;
+}
+
 export interface ThreadMessageForAi {
   from: string;
   direction: "inbound" | "outbound";
@@ -34,4 +51,5 @@ export interface ClassifyResult {
  */
 export interface AiProvider {
   classify(input: ClassifyInput): Promise<ClassifyResult>;
+  generateReply(input: GenerateReplyInput): Promise<GenerateReplyResult>;
 }

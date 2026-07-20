@@ -84,8 +84,18 @@ Remaining in Phase 1 (next):
 - TODO next: knowledge retrieval to feed businessContext, reply-draft generation, persistence to
   email_classifications + ai_usage_records (wired once ingestion produces messages)
 
-## ⬜ Phase 5b — Reply draft generation + factual validation
-## ⬜ Phase 6 — Approval workflow + audit
+## 🟡 Phase 5b — Reply draft generation (built; needs OPENAI_API_KEY to run)
+- `AiProvider.generateReply` + OpenAI impl + reply prompt encoding the spec §14 rules (preserve
+  names/dates/prices, only approved facts, ask only missing info, business tone/signature, no AI tells)
+- `drafts/service.generateDraftForThread`: classify → draft → persist classification + reply_draft
+  (with the auto-send decision + reason from safety) + ai_usage; "Generate AI draft" button on a thread
+- reply-generation covered by the fake-provider test
+
+## ✅ Phase 6 — Approval workflow + send (send works today via IMAP provider)
+- `/approvals`: pending drafts, inline edit, **Approve & send** (sends through the thread's mailbox
+  provider — real for IMAP/SMTP), Reject. Edits stored as immutable reply_versions.
+- Sent reply is written back as an outbound message; thread → waiting_customer; every step audited.
+- The whole spine now runs: receive (IMAP) → read → classify+draft (AI) → approve → send.
 ## ⬜ Phase 7 — Rules engine + auto-send policy + follow-ups + escalations
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
 

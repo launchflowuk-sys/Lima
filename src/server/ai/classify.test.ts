@@ -46,6 +46,9 @@ describe("classifyThread applies the safety policy over the model", () => {
           promptVersion: "test",
         };
       },
+      async generateReply() {
+        return { bodyText: "Thank you for your message.", usage: { model: "fake" }, promptVersion: "test" };
+      },
     };
     const result = await classifyThread(fake, { businessName: "B", businessContext: "", thread: [] });
     expect(result.classification.autoSendEligible).toBe(false);

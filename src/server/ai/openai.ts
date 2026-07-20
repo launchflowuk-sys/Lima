@@ -1,8 +1,15 @@
 import OpenAI from "openai";
 import { env } from "@/env";
 import { ClassificationSchema } from "./schemas";
-import { buildClassificationSystemPrompt, buildClassificationUserPrompt, CLASSIFICATION_PROMPT_VERSION } from "./prompt";
-import type { AiProvider, ClassifyInput, ClassifyResult } from "./provider";
+import {
+  buildClassificationSystemPrompt,
+  buildClassificationUserPrompt,
+  CLASSIFICATION_PROMPT_VERSION,
+  buildReplySystemPrompt,
+  buildReplyUserPrompt,
+  REPLY_PROMPT_VERSION,
+} from "./prompt";
+import type { AiProvider, ClassifyInput, ClassifyResult, GenerateReplyInput, GenerateReplyResult } from "./provider";
 
 let client: OpenAI | null = null;
 function getClient(): OpenAI {
@@ -37,6 +44,24 @@ export class OpenAiProvider implements AiProvider {
         completionTokens: res.usage?.completion_tokens,
       },
       promptVersion: CLASSIFICATION_PROMPT_VERSION,
+    };
+  }
+
+  async generateReply(input: GenerateReplyInput): Promise<GenerateReplyResult> {
+    const model = env.OPENAI_MODEL_REPLY;
+    const res = await getClient().chat.completions.create({
+      model,
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: buildReplySystemPrompt() },
+        { role: "user", content: buildReplyUserPrompt(input) },
+      ],
+    });
+    const bodyText = res.choices[0]?.message?.content?.trim() ?? "";
+    return {
+      bodyText,
+      usage: { model, promptTokens: res.usage?.prompt_tokens, completionTokens: res.usage?.completion_tokens },
+      promptVersion: REPLY_PROMPT_VERSION,
     };
   }
 }

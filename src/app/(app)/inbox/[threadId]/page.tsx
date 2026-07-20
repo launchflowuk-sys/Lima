@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getThreadForUser } from "@/server/inbox/service";
+import { generateDraftAction } from "./actions";
 
 export default async function ThreadPage({ params }: { params: Promise<{ threadId: string }> }) {
   const { threadId } = await params;
@@ -45,7 +46,15 @@ export default async function ThreadPage({ params }: { params: Promise<{ threadI
         ))}
       </div>
 
-      <p className="text-xs text-slate-400">AI classification, the intelligence panel and the reply editor attach here in the AI + approval phases.</p>
+      <div className="flex items-center gap-3 border-t border-slate-200 pt-4">
+        <form action={generateDraftAction}>
+          <input type="hidden" name="threadId" value={thread.id} />
+          <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+            Generate AI draft
+          </button>
+        </form>
+        <p className="text-xs text-slate-400">Classifies the thread, drafts a reply in the business voice, and sends it to Approvals. Needs an OpenAI key configured.</p>
+      </div>
     </div>
   );
 }

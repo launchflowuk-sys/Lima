@@ -1,0 +1,111 @@
+import { asc, eq } from "drizzle-orm";
+import { db } from "@/server/db/client";
+import { emailThreads, emailMessages, emailClassifications, replyDrafts, businesses, aiUsageRecords } from "@/server/db/schema";
+import { type AuthUser, assertBusinessAccess, assertPermission } from "@/server/auth/access";
+import { classifyThread } from "@/server/ai/classify";
+import { evaluateAutoSend } from "@/server/ai/safety";
+import { getAiProvider } from "@/server/ai";
+import type { AiUsage, ThreadMessageForAi } from "@/server/ai/provider";
+import { recordAudit } from "@/server/audit/log";
+
+async function recordAiUsage(businessId: string, purpose: string, usage: AiUsage) {
+  await db.insert(aiUsageRecords).values({
+    businessId,
+    purpose,
+    model: usage.model,
+    promptTokens: usage.promptTokens ?? null,
+    completionTokens: usage.completionTokens ?? null,
+  });
+}
+
+/**
+ * Classify the thread and draft a reply, persisting both. The draft lands as `pending_approval`
+ * with the auto-send decision + reason attached (spec §16). Requires `reply.edit`. Needs a
+ * configured AI provider (OPENAI_API_KEY) to run.
+ */
+export async function generateDraftForThread(user: AuthUser, threadId: string) {
+  const [thread] = await db.select().from(emailThreads).where(eq(emailThreads.id, threadId)).limit(1);
+  if (!thread) throw new Error("Thread not found");
+  assertBusinessAccess(user, thread.businessId);
+  assertPermission(user, thread.businessId, "reply.edit");
+
+  const [business] = await db.select().from(businesses).where(eq(businesses.id, thread.businessId)).limit(1);
+  const msgs = await db.select().from(emailMessages).where(eq(emailMessages.threadId, threadId)).orderBy(asc(emailMessages.sentAt));
+  if (!msgs.length) throw new Error("This thread has no messages to reply to");
+  const latestInbound = [...msgs].reverse().find((m) => m.direction === "inbound") ?? msgs[msgs.length - 1];
+
+  const threadForAi: ThreadMessageForAi[] = msgs.map((m) => ({
+    from: m.fromAddress ?? "unknown",
+    direction: m.direction,
+    sentAt: m.sentAt ? m.sentAt.toISOString() : null,
+    body: m.bodyText ?? m.snippet ?? "",
+  }));
+
+  // Knowledge retrieval feeds businessContext in a later phase; empty for now.
+  const businessContext = "";
+  const provider = getAiProvider();
+
+  const { classification, usage: clsUsage, promptVersion: clsVer } = await classifyThread(provider, {
+    businessName: business?.name ?? "",
+    businessContext,
+    thread: threadForAi,
+  });
+
+  await db.insert(emailClassifications).values({
+    businessId: thread.businessId,
+    messageId: latestInbound.id,
+    intent: classification.intent,
+    secondaryIntent: classification.secondaryIntent,
+    urgency: classification.urgency,
+    sentiment: classification.sentiment,
+    riskLevel: classification.riskLevel,
+    replyRequired: classification.replyRequired,
+    autoSendEligible: classification.autoSendEligible,
+    confidence: String(classification.confidence),
+    extractedEntities: classification.extractedEntities,
+    missingInformation: classification.missingInformation,
+    recommendedAction: classification.recommendedAction,
+    escalationReason: classification.escalationReason,
+    modelUsed: clsUsage.model,
+    promptVersion: clsVer,
+  });
+  await recordAiUsage(thread.businessId, "classification", clsUsage);
+
+  const reply = await provider.generateReply({
+    businessName: business?.name ?? "",
+    businessTone: business?.replyTone ?? null,
+    businessContext,
+    signature: business?.emailSignature ?? null,
+    thread: threadForAi,
+    classification,
+  });
+  const decision = evaluateAutoSend(classification);
+
+  const [draft] = await db
+    .insert(replyDrafts)
+    .values({
+      businessId: thread.businessId,
+      threadId,
+      inReplyToMessageId: latestInbound.id,
+      status: "pending_approval",
+      subject: thread.subject ? `Re: ${thread.subject.replace(/^re:\s*/i, "")}` : null,
+      bodyText: reply.bodyText,
+      autoSendEligible: decision.eligible,
+      autoSendBlockedReason: decision.reason,
+      knowledgeUsed: [],
+    })
+    .returning();
+  await recordAiUsage(thread.businessId, "reply", reply.usage);
+
+  await db.update(emailThreads).set({ status: "draft_prepared" }).where(eq(emailThreads.id, threadId));
+  await recordAudit({
+    businessId: thread.businessId,
+    actorUserId: user.id,
+    action: "draft.generated",
+    entityType: "reply_draft",
+    entityId: draft.id,
+    metadata: { intent: classification.intent, autoSendEligible: decision.eligible },
+  });
+
+  return draft;
+}
