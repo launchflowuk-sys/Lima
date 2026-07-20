@@ -108,12 +108,16 @@ JSON API with **Bearer-token auth** (same opaque-token session model as the web 
   `GET /threads/[id]`, `GET /approvals`, `POST /drafts/[id]/approve`, `POST /drafts/[id]/reject`
 - Native fetch isn't subject to CORS, so no CORS layer needed for the app.
 
-## ⬜ Mobile app (Expo) — next
-- Expo Router + TS app (`apps/mobile` or sibling), typed API client, secure token storage
-  (expo-secure-store), login → inbox → thread → approve/reject, Expo push for approval alerts
-- EAS: `eas.json` build profiles, `app.config.ts` (bundle id, icons, splash), `eas build`/`eas submit`
-  to **TestFlight** (needs Apple Developer + App Store Connect API key) and **Play internal testing**
-  (needs Play Developer + service-account JSON). Credentials via `eas login`/EAS secrets — never in code.
+## 🟡 Mobile app (Expo) — scaffolded (typecheck clean; needs `npm install` + Expo Go to run)
+- `mobile/` — Expo Router + TS (SDK 57). Screens: `login`, `(app)/inbox`, `(app)/approvals` (approve/
+  reject inline), `thread/[id]`. `lib/api.ts` typed client → `/api/v1`; `lib/token.ts` secure store
+  (Keychain/Keystore); `lib/auth.tsx` context. `app.json` (bundle id com.launchflow.inbox), `eas.json`
+  build profiles. Isolated deps (own node_modules) so no clash with the web app's React.
+- NOTE: create-expo-app's template extractor is broken in this sandbox, so it was hand-assembled via
+  `npm install expo` + `expo install` (correct SDK-57 versions) — verified with `tsc --noEmit`.
+- TODO: `npm install` in `mobile/`, set `expo.extra.apiUrl` to the API, `npx expo start` (Expo Go).
+- Then EAS: `eas init` → `eas build`/`eas submit` to TestFlight + Play (needs Apple/Google creds).
+- Push notifications for approval alerts: not wired yet (after first build).
 
 ## Schema domains still to add (spec §10)
 knowledge (+ documents/chunks/embeddings/templates), automation (rules/conditions/actions/

@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "LaunchFlow Inbox",
+    "slug": "launchflow-inbox",
+    "scheme": "launchflowinbox",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.launchflow.inbox"
+    },
+    "android": {
+      "package": "com.launchflow.inbox",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": ["expo-router", "expo-status-bar", "expo-secure-store"],
+    "extra": {
+      "apiUrl": "http://localhost:3000"
+    }
+  }
+}
