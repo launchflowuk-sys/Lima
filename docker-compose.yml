@@ -21,12 +21,12 @@ services:
       - redis-data:/data
 
   # One-shot migration runner. Coolify can run this before starting web/worker.
+  # Needs the full .env (not just DATABASE_URL): env.ts validates the whole schema on first access.
   migrate:
     build:
       context: .
     command: ["pnpm", "db:migrate"]
-    environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
