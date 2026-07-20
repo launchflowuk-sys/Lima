@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/server/auth/current-user";
-import { connectImapSmtpMailbox, deleteMailbox, syncMailbox } from "@/server/mailboxes/service";
+import { connectImapSmtpMailbox, deleteMailbox, syncMailbox, setMailboxAutonomy } from "@/server/mailboxes/service";
 
 export interface ConnectState {
   ok?: boolean;
@@ -65,6 +65,15 @@ export async function deleteMailboxAction(formData: FormData): Promise<void> {
     await deleteMailbox(user, id);
     revalidatePath("/mailboxes");
   }
+}
+
+export async function setAutonomyAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const id = String(formData.get("mailboxId") ?? "");
+  const mode = String(formData.get("mode") ?? "");
+  if (!id || (mode !== "draft_only" && mode !== "controlled_auto_send" && mode !== "disabled")) return;
+  await setMailboxAutonomy(user, id, mode);
+  revalidatePath("/mailboxes");
 }
 
 export async function syncMailboxAction(formData: FormData): Promise<void> {

@@ -15,6 +15,7 @@ export const emailThreads = pgTable(
     subject: text("subject"),
     status: threadStatusEnum("status").notNull().default("needs_reply"),
     assignedUserId: uuid("assigned_user_id").references(() => users.id, { onDelete: "set null" }),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
     lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
     isRead: boolean("is_read").notNull().default(false),
     ...timestamps,

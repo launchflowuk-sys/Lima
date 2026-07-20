@@ -113,7 +113,25 @@ Remaining in Phase 1 (next):
 - **API**: `GET/POST /api/v1/knowledge` for the mobile app.
 - Optional `embedText` added to the `AiProvider` interface + OpenAI impl (text-embedding-3-small).
 
-## ⬜ Phase 7 — Rules engine + auto-send policy + follow-ups + escalations
+## ✅ Phase 7 — Automation rules engine + controlled auto-send (Mode 2)
+- **Schema**: `automation_rules` (per-business, priority-ordered, typed JSONB conditions + actions,
+  stop_on_match), `automation_executions` (which rules matched + outcome, for "why did this happen?").
+  Added a `tags` jsonb column to `email_threads`. Migration `0002_soft_ulik.sql`.
+- **Pure engine** (`automation/engine.ts`, 21 tests): `ruleMatches` (AND semantics over intents/urgency/
+  sentiment/maxRisk/from·subject·body substrings, case-insensitive) + `evaluateRules` (priority order,
+  hold/escalate are sticky and beat auto-send, tag union, stop-on-match).
+- **Service**: rule CRUD (requires `automation.configure`) + `applyAutomationForThread` — applies thread
+  effects (tags, assignment, escalate→status) and records an execution row; returns the decision.
+- **Auto-send (Mode 2)**: refactored `approvals/service` to one `deliverDraft` send path shared by human
+  approve and the new **`autoSendDraft`** (system actor, no user). `generateDraftForThread` now runs the
+  rules, then auto-sends ONLY when: safety policy eligible (§16) AND a rule allowed it AND the mailbox is
+  in `controlled_auto_send`. On provider failure it falls back to a human draft. Everything audited.
+- **UI**: `/automation` page (rules table with when/then summary, enable/disable, delete) + create-rule
+  form; **mailbox autonomy switcher** on `/mailboxes` (draft-only ⇄ controlled auto-send, needs
+  `ai.configure`). Kills another 404.
+- **API**: `GET /api/v1/automation`.
+
+## ⬜ Phase 7b — Follow-ups + contacts/customer memory + escalation surfacing
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
 
 ## ✅ Mobile-ready JSON API (`/api/v1`) — built

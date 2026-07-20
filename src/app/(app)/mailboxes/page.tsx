@@ -2,7 +2,8 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { listBusinessesForUser } from "@/server/businesses/service";
 import { listMailboxesForUser } from "@/server/mailboxes/service";
 import { ConnectInboxForm } from "./connect-inbox-form";
-import { deleteMailboxAction, syncMailboxAction } from "./actions";
+import { deleteMailboxAction, syncMailboxAction, setAutonomyAction } from "./actions";
+import { AutonomySelect } from "./autonomy-select";
 
 const STATUS_STYLES: Record<string, string> = {
   connected: "bg-green-100 text-green-700",
@@ -57,7 +58,9 @@ export default async function MailboxesPage() {
                   <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[m.status] ?? "bg-slate-100 text-slate-500"}`}>{m.status}</span>
                   </td>
-                  <td className="px-4 py-3 text-slate-500">{m.autonomyMode.replace(/_/g, " ")}</td>
+                  <td className="px-4 py-3">
+                    <AutonomySelect mailboxId={m.id} value={m.autonomyMode} action={setAutonomyAction} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-3">
                       {m.provider === "imap_smtp" && (

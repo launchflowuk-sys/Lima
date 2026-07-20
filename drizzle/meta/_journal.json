@@ -15,6 +15,13 @@
       "when": 1784576170690,
       "tag": "0001_elite_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784576778650,
+      "tag": "0002_soft_ulik",
+      "breakpoints": true
     }
   ]
 }

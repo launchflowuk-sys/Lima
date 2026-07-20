@@ -111,6 +111,31 @@ export async function deleteMailbox(user: AuthUser, mailboxId: string): Promise<
   });
 }
 
+type AutonomyMode = Mailbox["autonomyMode"];
+
+/**
+ * Set a mailbox's autonomy mode (spec §15). `controlled_auto_send` is what enables Mode 2 — but even
+ * then, every individual reply must still pass the safety policy AND an automation rule before it can
+ * actually auto-send. `draft_only` (the default) means every reply waits for a human. Requires
+ * `ai.configure` — changing autonomy is a sensitive setting.
+ */
+export async function setMailboxAutonomy(user: AuthUser, mailboxId: string, mode: AutonomyMode): Promise<void> {
+  const rows = await db.select().from(mailboxes).where(eq(mailboxes.id, mailboxId)).limit(1);
+  const mailbox = rows[0];
+  if (!mailbox) throw new Error("Mailbox not found");
+  assertBusinessAccess(user, mailbox.businessId);
+  assertPermission(user, mailbox.businessId, "ai.configure");
+  await db.update(mailboxes).set({ autonomyMode: mode }).where(eq(mailboxes.id, mailboxId));
+  await recordAudit({
+    businessId: mailbox.businessId,
+    actorUserId: user.id,
+    action: "mailbox.autonomy_changed",
+    entityType: "mailbox",
+    entityId: mailboxId,
+    metadata: { from: mailbox.autonomyMode, to: mode },
+  });
+}
+
 /** Pull new mail for a mailbox now (IMAP). Requires `mailbox.manage`. */
 export async function syncMailbox(user: AuthUser, mailboxId: string): Promise<{ ingested: number }> {
   const rows = await db.select().from(mailboxes).where(eq(mailboxes.id, mailboxId)).limit(1);

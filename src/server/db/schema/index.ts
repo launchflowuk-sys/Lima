@@ -11,4 +11,5 @@ export * from "./mailboxes";
 export * from "./email";
 export * from "./ai";
 export * from "./knowledge";
+export * from "./automation";
 export * from "./governance";

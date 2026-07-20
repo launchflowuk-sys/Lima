@@ -1,13 +1,16 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/server/db/client";
-import { emailThreads, emailMessages, emailClassifications, replyDrafts, businesses, aiUsageRecords } from "@/server/db/schema";
+import { emailThreads, emailMessages, emailClassifications, replyDrafts, businesses, mailboxes, aiUsageRecords } from "@/server/db/schema";
 import { type AuthUser, assertBusinessAccess, assertPermission } from "@/server/auth/access";
 import { classifyThread } from "@/server/ai/classify";
 import { evaluateAutoSend } from "@/server/ai/safety";
 import { getAiProvider } from "@/server/ai";
 import type { AiUsage, ThreadMessageForAi } from "@/server/ai/provider";
 import { retrieveBusinessContext } from "@/server/knowledge/service";
+import { applyAutomationForThread } from "@/server/automation/service";
+import { autoSendDraft } from "@/server/approvals/service";
 import { recordAudit } from "@/server/audit/log";
+import { logger } from "@/server/logger";
 
 async function recordAiUsage(businessId: string, purpose: string, usage: AiUsage) {
   await db.insert(aiUsageRecords).values({
@@ -103,15 +106,62 @@ export async function generateDraftForThread(user: AuthUser, threadId: string) {
     .returning();
   await recordAiUsage(thread.businessId, "reply", reply.usage);
 
-  await db.update(emailThreads).set({ status: "draft_prepared" }).where(eq(emailThreads.id, threadId));
+  // Run the business's automation rules over this message: apply thread effects (tags/assign/escalate)
+  // and get the auto-send / hold decision. Then decide whether Mode 2 (controlled auto-send) fires.
+  const evaluation = await applyAutomationForThread({
+    businessId: thread.businessId,
+    threadId,
+    messageId: latestInbound.id,
+    context: {
+      intent: classification.intent,
+      secondaryIntent: classification.secondaryIntent ?? null,
+      urgency: classification.urgency,
+      sentiment: classification.sentiment,
+      riskLevel: classification.riskLevel,
+      fromAddress: latestInbound.fromAddress ?? null,
+      subject: thread.subject ?? null,
+      bodyText: latestInbound.bodyText ?? latestInbound.snippet ?? null,
+    },
+  });
+
+  const [mailbox] = await db.select().from(mailboxes).where(eq(mailboxes.id, thread.mailboxId)).limit(1);
+  const autoSendAllowed =
+    decision.eligible && // safety policy (spec §16) — the hard gate
+    evaluation.autoSend && // an automation rule permitted it and nothing forced a hold/escalation
+    mailbox?.autonomyMode === "controlled_auto_send"; // the mailbox is actually in Mode 2
+
+  let autoSent = false;
+  if (autoSendAllowed) {
+    try {
+      await autoSendDraft(draft.id);
+      autoSent = true;
+    } catch (err) {
+      // Auto-send failed at the provider — fall back to human approval rather than losing the reply.
+      logger.error({ err, draftId: draft.id }, "auto-send failed; leaving draft for approval");
+    }
+  }
+
+  // Thread status: auto-send already set auto_replied; escalation already set escalated; otherwise the
+  // reply is waiting for a human.
+  if (!autoSent && !evaluation.escalate) {
+    await db.update(emailThreads).set({ status: "draft_prepared" }).where(eq(emailThreads.id, threadId));
+  }
+
   await recordAudit({
     businessId: thread.businessId,
     actorUserId: user.id,
     action: "draft.generated",
     entityType: "reply_draft",
     entityId: draft.id,
-    metadata: { intent: classification.intent, autoSendEligible: decision.eligible },
+    metadata: {
+      intent: classification.intent,
+      autoSendEligible: decision.eligible,
+      autoSent,
+      matchedRules: evaluation.matchedRuleIds.length,
+      escalated: evaluation.escalate,
+    },
   });
 
-  return draft;
+  const [fresh] = await db.select().from(replyDrafts).where(eq(replyDrafts.id, draft.id)).limit(1);
+  return fresh ?? draft;
 }
