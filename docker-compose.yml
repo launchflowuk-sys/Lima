@@ -29,6 +29,11 @@ services:
     # orchestrator. env.ts validates the whole schema on first access, so it needs full .env.
     command: ["sh", "-c", "pnpm db:migrate && pnpm start"]
     env_file: .env
+    # Internal service wiring, derived from the POSTGRES_* vars. Set here (not left to the
+    # platform env) so the stack is self-wiring and reproducible; overrides any env_file value.
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-lima}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lima}
+      REDIS_URL: redis://redis:6379
     ports:
       - "3000:3000"
     depends_on:
@@ -45,6 +50,9 @@ services:
     restart: unless-stopped
     command: ["pnpm", "worker"]
     env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-lima}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lima}
+      REDIS_URL: redis://redis:6379
     depends_on:
       postgres:
         condition: service_healthy
