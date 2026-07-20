@@ -143,7 +143,25 @@ Remaining in Phase 1 (next):
 - **API**: `GET /api/v1/contacts`, `GET/POST /api/v1/follow-ups`.
 - NOTE: a background job to *notify* on due follow-ups lands with the notifications phase; data + UI are here.
 
-## ⬜ Phase 8 — Notifications (in-app/email/SMS/push) + analytics + BullMQ queues + remaining pages
+## ✅ Phase 8a — Dashboard + analytics + settings + team (all nav 404s gone)
+- Real `getDashboardStats` + `getAnalytics` (tenant-scoped counts, intent/sentiment, auto-send rate,
+  AI cost). `/dashboard`, `/analytics`, `/settings` (tone+signature), `/team` (members + access grant +
+  invites), `/accept-invitation` (public accept→session). `GET /api/v1/analytics|contacts|follow-ups`.
+
+## ✅ Phase 8b — BullMQ background queues (autonomous pipeline)
+- `queues/connection.ts` (lazy ioredis), `queues/queues.ts` (mailbox-sync/draft-generation/follow-up-scan
+  queues + enqueue helpers + repeatable jobs), `queues/processors.ts`, rewritten `queues/worker.ts`
+  (real Workers + graceful shutdown).
+- Flow: repeatable **scan-all** every 2m → fans out a **sync** per connected IMAP mailbox → `syncImapMailbox`
+  now returns new inbound thread ids → **enqueueDrafts** → **draft** job runs `generateDraftForThreadSystem`
+  (guards: OPENAI set, thread still needs_reply, no pending draft) → automation + controlled auto-send fire
+  downstream. Follow-up scan every 15m (delivery lands with notifications).
+- `generateDraftForThread` refactored into a shared core + a system (no-user) entrypoint for the worker.
+- NOTE: needs REDIS_URL + a running `pnpm worker` (docker-compose `worker`) + a connected IMAP mailbox to
+  exercise end to end. App build unaffected (queues aren't imported by the web bundle).
+
+## ⬜ Phase 8c — Notifications (in-app + email/SMS/push adapters) wired to follow-ups/escalations/approvals
+## ⬜ Phase 9 — Gmail + Microsoft OAuth/sync (code-complete; Shoji supplies creds) + E2E/integration tests
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
 
 ## ✅ Mobile-ready JSON API (`/api/v1`) — built

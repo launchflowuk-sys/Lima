@@ -33,6 +33,22 @@ export async function generateDraftForThread(user: AuthUser, threadId: string) {
   if (!thread) throw new Error("Thread not found");
   assertBusinessAccess(user, thread.businessId);
   assertPermission(user, thread.businessId, "reply.edit");
+  return runDraftGeneration(threadId, user.id);
+}
+
+/**
+ * System-initiated draft generation (background worker, no user). Used by the automated pipeline that
+ * drafts/auto-sends replies to newly-synced inbound mail. No permission check on purpose — the caller
+ * is the worker, and auto-send is still fully gated by safety + rules + mailbox autonomy downstream.
+ */
+export async function generateDraftForThreadSystem(threadId: string) {
+  return runDraftGeneration(threadId, null);
+}
+
+/** Shared core. `actorUserId` is the human who triggered it, or null for the background worker. */
+async function runDraftGeneration(threadId: string, actorUserId: string | null) {
+  const [thread] = await db.select().from(emailThreads).where(eq(emailThreads.id, threadId)).limit(1);
+  if (!thread) throw new Error("Thread not found");
 
   const [business] = await db.select().from(businesses).where(eq(businesses.id, thread.businessId)).limit(1);
   const msgs = await db.select().from(emailMessages).where(eq(emailMessages.threadId, threadId)).orderBy(asc(emailMessages.sentAt));
@@ -153,7 +169,8 @@ export async function generateDraftForThread(user: AuthUser, threadId: string) {
 
   await recordAudit({
     businessId: thread.businessId,
-    actorUserId: user.id,
+    actorUserId,
+    actorType: actorUserId ? "user" : "automation",
     action: "draft.generated",
     entityType: "reply_draft",
     entityId: draft.id,

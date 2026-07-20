@@ -60,9 +60,10 @@ function makeClient(mailbox: Mailbox): ImapFlow {
  * safe. Advances the stored cursor (uidValidity:lastUid) so each run only fetches what's new.
  * Provider-specific by design — Gmail/Microsoft get their own history/delta sync in their phases.
  */
-export async function syncImapMailbox(mailbox: Mailbox): Promise<{ ingested: number }> {
+export async function syncImapMailbox(mailbox: Mailbox): Promise<{ ingested: number; inboundThreadIds: string[] }> {
   const client = makeClient(mailbox);
   let ingested = 0;
+  const inboundThreadIds = new Set<string>();
 
   try {
     await client.connect();
@@ -88,8 +89,11 @@ export async function syncImapMailbox(mailbox: Mailbox): Promise<{ ingested: num
         if (!msg.source) continue;
         try {
           const parsed = await simpleParser(msg.source);
-          const created = await storeMessage(mailbox, parsed, msg.uid);
-          if (created) ingested += 1;
+          const result = await storeMessage(mailbox, parsed, msg.uid);
+          if (result.created) {
+            ingested += 1;
+            if (result.direction === "inbound") inboundThreadIds.add(result.threadId);
+          }
         } catch (err) {
           logger.warn({ err, uid: msg.uid, mailboxId: mailbox.id }, "Failed to parse/store IMAP message");
         }
@@ -109,10 +113,14 @@ export async function syncImapMailbox(mailbox: Mailbox): Promise<{ ingested: num
     try { await client.logout(); } catch { /* already closed */ }
   }
 
-  return { ingested };
+  return { ingested, inboundThreadIds: [...inboundThreadIds] };
 }
 
-async function storeMessage(mailbox: Mailbox, parsed: ParsedMail, uid: number): Promise<boolean> {
+async function storeMessage(
+  mailbox: Mailbox,
+  parsed: ParsedMail,
+  uid: number,
+): Promise<{ created: boolean; threadId: string; direction: "inbound" | "outbound" }> {
   const providerMessageId = parsed.messageId ?? `uid:${uid}`;
 
   // Dedup: skip if we already have this message in this mailbox.
@@ -121,7 +129,7 @@ async function storeMessage(mailbox: Mailbox, parsed: ParsedMail, uid: number): 
     .from(emailMessages)
     .where(and(eq(emailMessages.mailboxId, mailbox.id), eq(emailMessages.providerMessageId, providerMessageId)))
     .limit(1);
-  if (existing.length) return false;
+  if (existing.length) return { created: false, threadId: "", direction: "inbound" };
 
   const from = normaliseAddresses(parsed.from)[0] ?? null;
   const to = normaliseAddresses(parsed.to);
@@ -212,7 +220,7 @@ async function storeMessage(mailbox: Mailbox, parsed: ParsedMail, uid: number): 
     );
   }
 
-  return true;
+  return { created: true, threadId, direction };
 }
 
 async function upsertSyncState(mailboxId: string, cursor: string | null, lastError: string | null): Promise<void> {
