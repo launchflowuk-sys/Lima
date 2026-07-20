@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/server/auth/current-user";
-import { connectImapSmtpMailbox, deleteMailbox } from "@/server/mailboxes/service";
+import { connectImapSmtpMailbox, deleteMailbox, syncMailbox } from "@/server/mailboxes/service";
 
 export interface ConnectState {
   ok?: boolean;
@@ -64,5 +64,15 @@ export async function deleteMailboxAction(formData: FormData): Promise<void> {
   if (typeof id === "string") {
     await deleteMailbox(user, id);
     revalidatePath("/mailboxes");
+  }
+}
+
+export async function syncMailboxAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const id = formData.get("mailboxId");
+  if (typeof id === "string") {
+    await syncMailbox(user, id);
+    revalidatePath("/mailboxes");
+    revalidatePath("/inbox");
   }
 }

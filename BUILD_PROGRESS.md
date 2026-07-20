@@ -60,9 +60,18 @@ Remaining in Phase 1 (next):
 - Services: `businesses/service.ts`, `mailboxes/service.ts`, `audit/log.ts` — all business-scoped.
 
 ## ⬜ Phase 2 — Gmail (OAuth, sync, Pub/Sub watch, send) — NEEDS Google Cloud client id/secret + Pub/Sub
-## ⬜ Phase 3 — Microsoft (OAuth, Graph subscriptions, delta, send)
-## ⬜ Phase 3b — Generic IMAP/SMTP sync (poll loop, thread fetch) — send already works
-## ⬜ Phase 4 — Unified inbox + conversation workspace
+## ⬜ Phase 3 — Microsoft (OAuth, Graph subscriptions, delta, send) — NEEDS Entra app registration
+## ✅ Phase 3b — IMAP ingestion (built; verify against a real mailbox)
+- `email/sync/imap-sync.ts`: connects (imapflow), fetches new UIDs since the stored cursor
+  (uidValidity:lastUid; first run = last 50), parses (mailparser), stores threads/messages/
+  participants/attachment-metadata, dedupes by (mailbox, provider message id), advances cursor,
+  blocks executable attachments. "Sync now" button on Mailboxes triggers it.
+- NOTE: needs a live IMAP mailbox to verify end to end (Shoji has real ones to test with).
+
+## 🟡 Phase 4 — Unified inbox + thread view (read side done)
+- `/inbox` unified thread list (tenant-scoped, unread markers, status badges)
+- `/inbox/[threadId]` chronological thread view; opening marks read
+- TODO: filters/search, assignment, notes, the intelligence panel + reply editor (AI/approval phases)
 ## 🟡 Phase 5 — AI classification core done (needs OPENAI_API_KEY to run live)
 - Zod `ClassificationSchema` derived from the DB enums (can't drift); structured output per spec §11
 - `AiProvider` adapter interface + `OpenAiProvider` (JSON mode → schema-validated)

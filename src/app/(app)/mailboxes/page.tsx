@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { listBusinessesForUser } from "@/server/businesses/service";
 import { listMailboxesForUser } from "@/server/mailboxes/service";
 import { ConnectInboxForm } from "./connect-inbox-form";
-import { deleteMailboxAction } from "./actions";
+import { deleteMailboxAction, syncMailboxAction } from "./actions";
 
 const STATUS_STYLES: Record<string, string> = {
   connected: "bg-green-100 text-green-700",
@@ -58,11 +58,19 @@ export default async function MailboxesPage() {
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[m.status] ?? "bg-slate-100 text-slate-500"}`}>{m.status}</span>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{m.autonomyMode.replace(/_/g, " ")}</td>
-                  <td className="px-4 py-3 text-right">
-                    <form action={deleteMailboxAction}>
-                      <input type="hidden" name="mailboxId" value={m.id} />
-                      <button type="submit" className="text-xs font-medium text-red-600 hover:text-red-500">Remove</button>
-                    </form>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      {m.provider === "imap_smtp" && (
+                        <form action={syncMailboxAction}>
+                          <input type="hidden" name="mailboxId" value={m.id} />
+                          <button type="submit" className="text-xs font-medium text-blue-600 hover:text-blue-500">Sync now</button>
+                        </form>
+                      )}
+                      <form action={deleteMailboxAction}>
+                        <input type="hidden" name="mailboxId" value={m.id} />
+                        <button type="submit" className="text-xs font-medium text-red-600 hover:text-red-500">Remove</button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}

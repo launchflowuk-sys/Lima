@@ -6,6 +6,7 @@ import { encryptSecret } from "@/server/security/encryption";
 import { getProvider } from "@/server/email/providers/registry";
 import { recordAudit } from "@/server/audit/log";
 import { listBusinessesForUser } from "@/server/businesses/service";
+import { syncImapMailbox } from "@/server/email/sync/imap-sync";
 
 export type Mailbox = typeof mailboxes.$inferSelect;
 
@@ -108,4 +109,26 @@ export async function deleteMailbox(user: AuthUser, mailboxId: string): Promise<
     entityType: "mailbox",
     entityId: mailboxId,
   });
+}
+
+/** Pull new mail for a mailbox now (IMAP). Requires `mailbox.manage`. */
+export async function syncMailbox(user: AuthUser, mailboxId: string): Promise<{ ingested: number }> {
+  const rows = await db.select().from(mailboxes).where(eq(mailboxes.id, mailboxId)).limit(1);
+  const mailbox = rows[0];
+  if (!mailbox) throw new Error("Mailbox not found");
+  assertBusinessAccess(user, mailbox.businessId);
+  assertPermission(user, mailbox.businessId, "mailbox.manage");
+  if (mailbox.provider !== "imap_smtp") {
+    throw new Error("Live sync is currently available for IMAP/SMTP mailboxes only");
+  }
+  const result = await syncImapMailbox(mailbox);
+  await recordAudit({
+    businessId: mailbox.businessId,
+    actorUserId: user.id,
+    action: "mailbox.synced",
+    entityType: "mailbox",
+    entityId: mailboxId,
+    metadata: { ingested: result.ingested },
+  });
+  return result;
 }
