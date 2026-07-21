@@ -134,7 +134,7 @@ export default async function MailboxesPage({ searchParams }: MailboxesPageProps
           <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Connect your first inbox below.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500">
               <tr>

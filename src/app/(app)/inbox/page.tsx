@@ -34,7 +34,7 @@ export default async function InboxPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
           {threads.map((t) => (
             <Link key={t.id} href={`/inbox/${t.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
               <span className={`h-2 w-2 flex-shrink-0 rounded-full ${t.isRead ? "bg-transparent" : "bg-blue-500"}`} />

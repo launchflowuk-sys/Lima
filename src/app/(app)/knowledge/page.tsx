@@ -44,7 +44,7 @@ export default async function KnowledgePage() {
                 No facts yet. Add your first below — the AI can only reply with facts it finds here.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500">
                     <tr>
@@ -88,7 +88,7 @@ export default async function KnowledgePage() {
           {documents.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-slate-900">Documents ({documents.length})</h2>
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500">
                     <tr>

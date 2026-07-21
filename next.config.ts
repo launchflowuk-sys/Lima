@@ -6,11 +6,11 @@ const nextConfig: NextConfig = {
   // Keep native/server-only deps out of the client/edge bundle.
   serverExternalPackages: ["postgres", "bullmq", "ioredis", "imapflow", "nodemailer", "pino"],
   // The production host (Hetzner, 3.7GB shared with Postgres/Redis/Coolify) OOMs during `next build`'s
-  // in-build type-check/lint phase. We gate both separately — `pnpm typecheck` + tests run locally before
-  // every push (the deploy rule) — so skipping the redundant in-build passes keeps safety while letting
-  // the memory-constrained box finish the build. Do NOT rely on these to catch errors; the local gate does.
+  // in-build TypeScript phase. We gate types separately — `pnpm typecheck` + tests run locally before
+  // every push (the deploy rule) — so skipping the redundant in-build type-check keeps safety while
+  // letting the memory-constrained box finish the build. Do NOT rely on this to catch errors; the local
+  // `pnpm typecheck` gate does. (Next 16 no longer runs ESLint during build, so no eslint key is needed.)
   typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
 };
 
 export default nextConfig;

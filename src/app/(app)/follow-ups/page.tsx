@@ -34,7 +34,7 @@ export default async function FollowUpsPage() {
               Nothing pending. Schedule a follow-up below so a conversation doesn&rsquo;t slip.
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500">
                   <tr>

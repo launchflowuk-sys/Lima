@@ -52,7 +52,7 @@ export default async function AutomationPage() {
                 No rules yet. Every message currently becomes a draft for approval. Add a rule below to change that.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500">
                     <tr>
