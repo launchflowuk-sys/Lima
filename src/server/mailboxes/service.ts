@@ -8,6 +8,7 @@ import { recordAudit } from "@/server/audit/log";
 import { listBusinessesForUser } from "@/server/businesses/service";
 import { syncImapMailbox } from "@/server/email/sync/imap-sync";
 import { syncGmailMailbox } from "@/server/email/sync/gmail-sync";
+import { syncMicrosoftMailbox } from "@/server/email/sync/microsoft-sync";
 
 export type Mailbox = typeof mailboxes.$inferSelect;
 
@@ -137,17 +138,23 @@ export async function setMailboxAutonomy(user: AuthUser, mailboxId: string, mode
   });
 }
 
-/** Pull new mail for a mailbox now (IMAP). Requires `mailbox.manage`. */
+/** Pull new mail for a mailbox now (Gmail / Microsoft / IMAP). Requires `mailbox.manage`. */
 export async function syncMailbox(user: AuthUser, mailboxId: string): Promise<{ ingested: number }> {
   const rows = await db.select().from(mailboxes).where(eq(mailboxes.id, mailboxId)).limit(1);
   const mailbox = rows[0];
   if (!mailbox) throw new Error("Mailbox not found");
   assertBusinessAccess(user, mailbox.businessId);
   assertPermission(user, mailbox.businessId, "mailbox.manage");
-  if (mailbox.provider !== "imap_smtp" && mailbox.provider !== "gmail") {
-    throw new Error("Live sync is currently available for Gmail and IMAP/SMTP mailboxes only");
-  }
-  const result = mailbox.provider === "gmail" ? await syncGmailMailbox(mailbox) : await syncImapMailbox(mailbox);
+  const result =
+    mailbox.provider === "gmail"
+      ? await syncGmailMailbox(mailbox)
+      : mailbox.provider === "microsoft"
+        ? await syncMicrosoftMailbox(mailbox)
+        : mailbox.provider === "imap_smtp"
+          ? await syncImapMailbox(mailbox)
+          : (() => {
+              throw new Error("Live sync is currently available for Gmail, Microsoft, and IMAP/SMTP mailboxes only");
+            })();
   await recordAudit({
     businessId: mailbox.businessId,
     actorUserId: user.id,

@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { listBusinessesForUser } from "@/server/businesses/service";
 import { listMailboxesForUser } from "@/server/mailboxes/service";
 import { isGmailConfigured } from "@/server/email/providers/gmail-oauth";
+import { isMicrosoftConfigured } from "@/server/email/providers/microsoft-oauth";
 import { ConnectInboxForm } from "./connect-inbox-form";
 import { deleteMailboxAction, syncMailboxAction, setAutonomyAction } from "./actions";
 import { AutonomySelect } from "./autonomy-select";
@@ -23,11 +24,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   gmail_not_configured: "Gmail OAuth isn't configured on the server yet (missing Google client credentials).",
   gmail_missing_code: "Gmail didn't return an authorization code. Please try connecting again.",
   gmail_connect_failed: "Connecting the Gmail account failed. Please try again.",
+  microsoft_not_configured: "Microsoft OAuth isn't configured on the server yet (missing Microsoft client credentials).",
+  microsoft_missing_code: "Microsoft didn't return an authorization code. Please try connecting again.",
+  microsoft_connect_failed: "Connecting the Microsoft account failed. Please try again.",
   invalid_business: "That business could not be identified. Please try again.",
 };
 
 // Live sync (Sync now + the periodic worker) is available for these providers.
-const SYNCABLE_PROVIDERS = new Set(["imap_smtp", "gmail"]);
+const SYNCABLE_PROVIDERS = new Set(["imap_smtp", "gmail", "microsoft"]);
 
 interface MailboxesPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -43,6 +47,7 @@ export default async function MailboxesPage({ searchParams }: MailboxesPageProps
   const connected = typeof params.connected === "string" ? params.connected : null;
   const errorKey = typeof params.error === "string" ? params.error : null;
   const gmailReady = isGmailConfigured();
+  const microsoftReady = isMicrosoftConfigured();
 
   return (
     <div className="space-y-8">
@@ -54,6 +59,11 @@ export default async function MailboxesPage({ searchParams }: MailboxesPageProps
       {connected === "gmail" && (
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
           Gmail account connected. It will start syncing shortly.
+        </div>
+      )}
+      {connected === "microsoft" && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          Microsoft 365 account connected. It will start syncing shortly.
         </div>
       )}
       {errorKey && (
@@ -86,6 +96,34 @@ export default async function MailboxesPage({ searchParams }: MailboxesPageProps
         ) : (
           <p className="mt-4 text-sm text-amber-600">
             Gmail OAuth isn&apos;t configured on the server yet. Set the Google client credentials to enable it.
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6">
+        <h2 className="text-base font-semibold text-slate-900">Connect Microsoft 365</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Sign in with Microsoft to connect an Outlook / Microsoft 365 inbox via OAuth. Read and send scopes only — no password stored.
+        </p>
+        {microsoftReady ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {businesses.length === 0 ? (
+              <span className="text-sm text-slate-400">Create a business first to connect an inbox.</span>
+            ) : (
+              businesses.map((b) => (
+                <a
+                  key={b.id}
+                  href={`/api/oauth/microsoft/start?businessId=${b.id}`}
+                  className="inline-flex items-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                >
+                  Connect Microsoft for {b.name}
+                </a>
+              ))
+            )}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-amber-600">
+            Microsoft OAuth isn&apos;t configured on the server yet. Set the Microsoft client credentials to enable it.
           </p>
         )}
       </section>
@@ -143,7 +181,7 @@ export default async function MailboxesPage({ searchParams }: MailboxesPageProps
 
       <ConnectInboxForm businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} />
 
-      <p className="text-xs text-slate-400">Gmail connects via OAuth (read + send). Microsoft 365 arrives in its own phase. IMAP/SMTP works now.</p>
+      <p className="text-xs text-slate-400">Gmail and Microsoft 365 connect via OAuth (read + send). IMAP/SMTP works now.</p>
     </div>
   );
 }
