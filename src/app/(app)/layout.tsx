@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "@/server/auth/current-user";
@@ -36,9 +37,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="flex">
         <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r border-slate-200 bg-white">
-          <div className="h-16 flex items-center px-5 border-b border-slate-200">
-            <span className="font-bold tracking-tight">Agent</span>
-            <span className="ml-1.5 text-sm font-medium text-slate-400">Lima</span>
+          <div className="h-16 flex items-center gap-2.5 px-5 border-b border-slate-200">
+            <Image src="/brand/lima-badge.png" alt="Agent Lima" width={28} height={28} priority className="rounded-[7px]" />
+            <div className="leading-none">
+              <span className="font-bold tracking-tight">Agent</span>
+              <span className="ml-1.5 text-sm font-medium text-slate-400">Lima</span>
+            </div>
           </div>
           <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
             {NAV.map((item) => (

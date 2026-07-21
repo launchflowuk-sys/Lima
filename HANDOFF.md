@@ -102,14 +102,26 @@ credential paths are validated by real builds.
 - [ ] **Seed the owner login** on the live DB (no user exists yet). In your own SSH session:
       `WEB=$(docker ps --format '{{.Names}}' | grep '^web-pagnac4'); docker exec -e SEED_OWNER_EMAIL='you@example.com' -e SEED_OWNER_PASSWORD='a-strong-pw' "$WEB" pnpm db:seed`
       — then sign in at `https://agentlima.com/login`. (Classifier blocks Claude from running this with a password.)
-- [ ] **Gmail + Microsoft providers** (`src/server/email/providers/{gmail,microsoft}.ts`) are honest
-      skeletons — implement OAuth/sync/send. Needs Shoji's Google Cloud OAuth + Pub/Sub and Entra app creds.
+- [x] **Gmail provider — BUILT (real Gmail API, no mocks).** OAuth start/callback routes
+      (`/api/oauth/gmail/{start,callback}`), signed state (jose), encrypted token storage + auto-refresh,
+      `historyId` incremental sync into the existing thread tables, MIME reply send with correct
+      threading, "Connect Gmail" button on /mailboxes. Typecheck + 70 tests + build all green.
+      **Needs Shoji's Google Cloud OAuth creds to verify live** — full setup steps in `docs/GMAIL_SETUP.md`;
+      set `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI` in Coolify. Pub/Sub push is
+      optional (Phase 2b) — polling works without it.
+- [ ] **Microsoft provider** (`src/server/email/providers/microsoft.ts`) is still an honest skeleton —
+      implement OAuth/sync/send. Needs an Entra app registration. (Gmail is the template to follow now.)
 - [ ] Finish mobile store submission (see Mobile section above) once builds are green.
 - [ ] Optional: add a `healthcheck:` to the `web` compose service so Coolify reports `running:healthy`.
 - [x] Coolify deploy of `agentlima.com` (TLS) — DONE, live.
 - [x] `OPENAI_API_KEY` in Coolify — set (AI drafting enabled).
 - [x] Mobile: EAS linked + iOS/Android credentials wired + first builds triggered.
 - [x] Notifications (Phase 8c) — actually built (in-app + email channels wired into the queue). BUILD_PROGRESS marker was stale.
+- [x] **Branding — DONE.** Logo processed into a full asset set (`sharp`): app icon on a black→deep-blue
+      gradient, Android adaptive icon, mobile splash (`#05070C`), web favicon/apple-icon (`src/app/icon.png`,
+      `apple-icon.png` — old default `favicon.ico` removed), and a rounded badge in the web sidebar + login.
+      Mobile assets in `mobile/assets/images/`, brand source in `public/brand/`. Wired in `mobile/app.json`.
+      Regenerate script (if the logo changes): scratchpad `imgtool/build.js` (needs `sharp`).
 
 ## Tooling in a fresh session (IMPORTANT)
 - **Global Claude skills + `~/.claude/CLAUDE.md` ARE available here** — they're user-scoped, so opening Claude

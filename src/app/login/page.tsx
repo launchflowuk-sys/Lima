@@ -33,6 +33,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/lima-badge.png" alt="Agent Lima" width={56} height={56} className="mx-auto mb-3 h-14 w-14 rounded-2xl shadow-sm" />
           <p className="text-lg font-bold tracking-tight text-slate-900">Agent <span className="text-slate-400 font-medium">Lima</span></p>
           <p className="mt-1 text-sm text-slate-500">Sign in to your workspace</p>
         </div>

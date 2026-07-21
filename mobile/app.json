@@ -6,8 +6,15 @@
     "owner": "shoji147",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#0A1526",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#05070C"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.launchflow.inbox",
@@ -17,7 +24,15 @@
     },
     "android": {
       "package": "com.launchflow.inbox",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundImage": "./assets/images/adaptive-bg.png",
+        "backgroundColor": "#000000"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
