@@ -1,17 +1,9 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { Alert, FlatList, Text, TextInput, View } from "react-native";
-import Feather from "@expo/vector-icons/Feather";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, TextInput, View } from "react-native";
 import { api, type Draft } from "@/lib/api";
-import { Badge, Button, EmptyState } from "@/components/ui";
-import { fonts, spacing } from "@/constants/theme";
-import { useColors } from "@/lib/theme";
 
 export default function Approvals() {
-  const c = useColors();
-  const insets = useSafeAreaInsets();
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -49,108 +41,45 @@ export default function Approvals() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <StatusBar style="dark" />
-      <View
-        style={{
-          paddingTop: insets.top + spacing.md,
-          paddingBottom: 14,
-          paddingHorizontal: spacing.xl,
-          borderBottomWidth: 2,
-          borderBottomColor: c.dividerStrong,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ fontSize: 30, fontFamily: fonts.heading, color: c.text, letterSpacing: -0.4 }}>Approval</Text>
-        {drafts.length > 0 ? (
-          <View style={{ marginLeft: "auto" }}>
-            <Badge variant="primary" label={`${drafts.length} pending`} />
-          </View>
-        ) : null}
-      </View>
-
+    <View style={{ flex: 1, backgroundColor: "#f8fafc" }}>
       <FlatList
         data={drafts}
         keyExtractor={(d) => d.id}
-        contentContainerStyle={{ padding: spacing.xl, flexGrow: 1, gap: spacing.xl }}
-        refreshing={refreshing}
-        onRefresh={load}
+        contentContainerStyle={{ padding: 12 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
         ListEmptyComponent={
-          !refreshing ? (
-            <EmptyState kicker="Approvals" title="Nothing to approve" message="Drafts awaiting your sign-off will appear here." />
-          ) : null
+          !refreshing ? <Text style={{ textAlign: "center", color: "#94a3b8", marginTop: 48 }}>Nothing to approve.</Text> : null
         }
-        renderItem={({ item }) => {
-          const busy = busyId === item.id;
-          return (
-            <View>
-              {/* Meta row */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: 10 }}>
-                <Badge variant="neutral" label="Draft" />
-                {item.autoSendBlockedReason ? <Badge variant="danger" label="needs a human" /> : null}
-              </View>
-
-              <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: c.text }} numberOfLines={2}>
-                {item.threadSubject || "(no subject)"}
-              </Text>
-              {item.autoSendBlockedReason ? (
-                <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: c.warning, marginTop: 4 }}>
-                  {item.autoSendBlockedReason}
-                </Text>
-              ) : null}
-
-              {/* Drafted reply label */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg, marginBottom: 10 }}>
-                <View style={{ width: 14, height: 14, backgroundColor: c.primary }} />
-                <Text
-                  style={{
-                    fontFamily: fonts.heading,
-                    fontSize: 10,
-                    letterSpacing: 0.12 * 10,
-                    textTransform: "uppercase",
-                    color: c.text,
-                  }}
-                >
-                  Drafted reply
-                </Text>
-              </View>
-
-              {/* Editable draft body — sharp 2px border box */}
-              <TextInput
-                multiline
-                defaultValue={item.bodyText}
-                onChangeText={(t) => setEdits((e) => ({ ...e, [item.id]: t }))}
-                placeholderTextColor={c.textMuted}
-                style={{
-                  minHeight: 130,
-                  borderWidth: 2,
-                  borderColor: c.text,
-                  borderRadius: 0,
-                  padding: 16,
-                  fontSize: 13.5,
-                  fontFamily: fonts.body,
-                  color: c.text,
-                  backgroundColor: c.surface,
-                  textAlignVertical: "top",
-                }}
-              />
-
-              <View style={{ marginTop: spacing.md }}>
-                <Button
-                  label="Approve & send"
-                  onPress={() => act(item.id, "approve")}
-                  loading={busy}
-                  block
-                  rightIcon={<Feather name="arrow-right" size={16} color={c.primaryFg} />}
-                />
-              </View>
-              <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.md }}>
-                <Button label="Reject" variant="danger" onPress={() => act(item.id, "reject")} disabled={busy} style={{ flex: 1 }} />
-              </View>
+        renderItem={({ item }) => (
+          <View style={{ backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#e2e8f0", padding: 14, marginBottom: 12 }}>
+            <Text style={{ fontWeight: "700", color: "#0f172a" }} numberOfLines={1}>{item.threadSubject || "(no subject)"}</Text>
+            {item.autoSendBlockedReason ? (
+              <Text style={{ color: "#d97706", fontSize: 12, marginTop: 2 }}>Needs a human: {item.autoSendBlockedReason}</Text>
+            ) : null}
+            <TextInput
+              multiline
+              defaultValue={item.bodyText}
+              onChangeText={(t) => setEdits((e) => ({ ...e, [item.id]: t }))}
+              style={{ marginTop: 10, minHeight: 120, borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 8, padding: 10, fontSize: 14, textAlignVertical: "top" }}
+            />
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+              <Pressable
+                onPress={() => act(item.id, "approve")}
+                disabled={busyId === item.id}
+                style={{ flex: 1, backgroundColor: "#2563eb", borderRadius: 8, paddingVertical: 12, alignItems: "center", opacity: busyId === item.id ? 0.6 : 1 }}
+              >
+                {busyId === item.id ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Approve & send</Text>}
+              </Pressable>
+              <Pressable
+                onPress={() => act(item.id, "reject")}
+                disabled={busyId === item.id}
+                style={{ borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16, alignItems: "center" }}
+              >
+                <Text style={{ color: "#475569", fontWeight: "600" }}>Reject</Text>
+              </Pressable>
             </View>
-          );
-        }}
+          </View>
+        )}
       />
     </View>
   );

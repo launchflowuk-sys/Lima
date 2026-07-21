@@ -1,18 +1,10 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
-import Feather from "@expo/vector-icons/Feather";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "@/lib/auth";
-import { Button, Input, Wordmark } from "@/components/ui";
-import { fonts, spacing } from "@/constants/theme";
-import { useColors } from "@/lib/theme";
 
 export default function Login() {
   const { signIn } = useAuth();
-  const c = useColors();
-  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,108 +23,41 @@ export default function Login() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <StatusBar style="dark" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "center",
-            padding: spacing.xl,
-            paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xl,
-          }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Wordmark */}
-          <View style={{ marginBottom: spacing["2xl"] }}>
-            <Wordmark markSize={30} fontSize={20} />
-            <Text
-              style={{
-                fontFamily: fonts.body,
-                fontSize: 14,
-                color: c.textMuted,
-                marginTop: spacing.md,
-                lineHeight: 20,
-              }}
-            >
-              Your AI email agent. Read the enquiry, read Lima's draft, approve on the move.
-            </Text>
-          </View>
+    <View style={{ flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#f8fafc" }}>
+      <Text style={{ fontSize: 22, fontWeight: "700", color: "#0f172a" }}>LaunchFlow Inbox</Text>
+      <Text style={{ marginTop: 4, marginBottom: 24, color: "#64748b" }}>Sign in to your workspace</Text>
 
-          {/* 2px section rule */}
-          <View style={{ height: 2, backgroundColor: c.dividerStrong, marginBottom: spacing.xl }} />
+      <Text style={{ fontSize: 13, fontWeight: "600", color: "#334155", marginBottom: 6 }}>Email</Text>
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={inputStyle}
+      />
 
-          <Text
-            style={{
-              fontFamily: fonts.heading,
-              fontSize: 10,
-              letterSpacing: 0.12 * 10,
-              textTransform: "uppercase",
-              color: c.primary,
-              marginBottom: spacing.md,
-            }}
-          >
-            Sign in
-          </Text>
+      <Text style={{ fontSize: 13, fontWeight: "600", color: "#334155", marginTop: 16, marginBottom: 6 }}>Password</Text>
+      <TextInput value={password} onChangeText={setPassword} secureTextEntry style={inputStyle} />
 
-          <View style={{ gap: spacing.lg }}>
-            <Input
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              placeholder="you@business.com"
-            />
+      {error ? <Text style={{ color: "#dc2626", marginTop: 12 }}>{error}</Text> : null}
 
-            <Input
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholder="••••••••"
-            />
-          </View>
-
-          {error ? (
-            <View
-              style={{
-                marginTop: spacing.lg,
-                borderWidth: 1,
-                borderColor: c.danger,
-                padding: spacing.md,
-              }}
-            >
-              <Text style={{ color: c.danger, fontSize: 13, fontFamily: fonts.medium }}>{error}</Text>
-            </View>
-          ) : null}
-
-          <View style={{ height: spacing.xl }} />
-
-          <Button
-            label="Sign in"
-            onPress={onSubmit}
-            loading={loading}
-            block
-            rightIcon={<Feather name="arrow-right" size={16} color={c.primaryFg} />}
-          />
-
-          <Text
-            style={{
-              textAlign: "left",
-              color: c.textMuted,
-              fontSize: 11,
-              fontFamily: fonts.body,
-              marginTop: spacing.xl,
-              letterSpacing: 0.02 * 11,
-            }}
-          >
-            Powered by LaunchFlow
-          </Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      <Pressable
+        onPress={onSubmit}
+        disabled={loading}
+        style={{ marginTop: 24, backgroundColor: "#2563eb", borderRadius: 10, paddingVertical: 14, alignItems: "center", opacity: loading ? 0.6 : 1 }}
+      >
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Sign in</Text>}
+      </Pressable>
     </View>
   );
 }
+
+const inputStyle = {
+  borderWidth: 1,
+  borderColor: "#cbd5e1",
+  borderRadius: 10,
+  paddingHorizontal: 12,
+  paddingVertical: 12,
+  fontSize: 16,
+  backgroundColor: "#fff",
+} as const;
