@@ -19,6 +19,10 @@ RUN pnpm install --frozen-lockfile --config.strictDepBuilds=false \
 
 # --- build: compile the Next app ---
 FROM base AS build
+# Raise Node's heap ceiling for the build. The host is memory-constrained (3.7GB shared with the DB/
+# Redis/Coolify) and `next build` previously OOM-killed (SIGABRT, "heap out of memory"). This is a
+# ceiling, not a reservation, so it's safe; combined with skipping the in-build type-check (next.config).
+ENV NODE_OPTIONS=--max-old-space-size=3072
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
