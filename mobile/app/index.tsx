@@ -5,5 +5,5 @@ import { Splash } from "@/components/Splash";
 export default function Index() {
   const { user, loading } = useAuth();
   if (loading) return <Splash />;
-  return <Redirect href={user ? "/(app)/inbox" : "/login"} />;
+  return <Redirect href={user ? "/(app)/dashboard" : "/login"} />;
 }

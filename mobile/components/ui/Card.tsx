@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { colors, radius, shadow } from "@/constants/theme";
 
 interface CardProps {
@@ -12,7 +12,7 @@ interface CardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Big, rounded, soft-shadow white card. Presses with a subtle spring scale. */
+/** Big, rounded, soft-shadow white card. Presses with a subtle non-bouncy timing scale. */
 export function Card({ children, onPress, style, padded = true }: CardProps) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -31,8 +31,8 @@ export function Card({ children, onPress, style, padded = true }: CardProps) {
   return (
     <AnimatedPressable
       onPress={onPress}
-      onPressIn={() => (scale.value = withSpring(0.98, { damping: 18, stiffness: 300 }))}
-      onPressOut={() => (scale.value = withSpring(1, { damping: 18, stiffness: 300 }))}
+      onPressIn={() => (scale.value = withTiming(0.985, { duration: 120 }))}
+      onPressOut={() => (scale.value = withTiming(1, { duration: 120 }))}
       style={[base, animatedStyle, style]}
     >
       {children}

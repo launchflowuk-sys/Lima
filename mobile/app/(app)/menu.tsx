@@ -1,9 +1,8 @@
 import { Alert, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
-import Animated, { FadeInDown } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
-import { Avatar, Button, Card, Screen, SectionHeader } from "@/components/ui";
+import { AnimatedListItem, Avatar, Button, Card, Screen, SectionHeader } from "@/components/ui";
 import { MENU_GROUPS, type SectionDef } from "@/constants/sections";
 import { colors, font } from "@/constants/theme";
 
@@ -33,7 +32,7 @@ export default function Menu() {
       >
         <SectionHeader title="Menu" subtitle="Everything in your workspace" />
 
-        <Animated.View entering={FadeInDown.springify().damping(18)}>
+        <AnimatedListItem index={0}>
           <Card style={{ marginBottom: 24 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
               <Avatar name={fullName} size={52} />
@@ -48,7 +47,7 @@ export default function Menu() {
               </View>
             </View>
           </Card>
-        </Animated.View>
+        </AnimatedListItem>
 
         {MENU_GROUPS.map((group) => (
           <View key={group.heading} style={{ marginBottom: 22 }}>
@@ -69,7 +68,7 @@ export default function Menu() {
               {group.items.map((item) => {
                 const idx = rowIndex++;
                 return (
-                  <AnimatedRow key={item.key} index={idx}>
+                  <AnimatedListItem key={item.key} index={idx}>
                     <Card onPress={() => open(item)} padded={false}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14 }}>
                         <View
@@ -111,7 +110,7 @@ export default function Menu() {
                         <Feather name="chevron-right" size={20} color={colors.inkMuted} />
                       </View>
                     </Card>
-                  </AnimatedRow>
+                  </AnimatedListItem>
                 );
               })}
             </View>
@@ -121,13 +120,5 @@ export default function Menu() {
         <Button label="Sign out" variant="secondary" icon="log-out" onPress={confirmSignOut} />
       </ScrollView>
     </Screen>
-  );
-}
-
-function AnimatedRow({ index, children }: { index: number; children: React.ReactNode }) {
-  return (
-    <Animated.View entering={FadeInDown.springify().damping(18).delay(Math.min(index, 12) * 40)}>
-      {children}
-    </Animated.View>
   );
 }

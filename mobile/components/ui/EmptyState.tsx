@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { colors, font } from "@/constants/theme";
 
@@ -12,7 +12,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon = "inbox", title, subtitle }: EmptyStateProps) {
   return (
     <Animated.View
-      entering={FadeInDown.springify().damping(18)}
+      entering={FadeIn.duration(160)}
       style={{ alignItems: "center", justifyContent: "center", paddingVertical: 64, paddingHorizontal: 32 }}
     >
       <View

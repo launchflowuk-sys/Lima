@@ -10,3 +10,7 @@ export { FAB } from "./FAB";
 export { AnimatedListItem } from "./AnimatedListItem";
 export { EmptyState } from "./EmptyState";
 export { SectionHeader } from "./SectionHeader";
+export { ScreenHeader } from "./ScreenHeader";
+export { StatTile, type Tone } from "./StatTile";
+export { HtmlBody } from "./HtmlBody";
+export { PlaceholderSection } from "./PlaceholderSection";

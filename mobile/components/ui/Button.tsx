@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { colors, font, radius, shadow } from "@/constants/theme";
 
@@ -50,8 +50,8 @@ export function Button({
     <AnimatedPressable
       onPress={onPress}
       disabled={isDisabled}
-      onPressIn={() => (scale.value = withSpring(0.96, { damping: 15, stiffness: 320 }))}
-      onPressOut={() => (scale.value = withSpring(1, { damping: 15, stiffness: 320 }))}
+      onPressIn={() => (scale.value = withTiming(0.97, { duration: 120 }))}
+      onPressOut={() => (scale.value = withTiming(1, { duration: 120 }))}
       style={[
         {
           height: 56,

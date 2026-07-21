@@ -1,9 +1,9 @@
 import { Pressable, type ViewStyle } from "react-native";
 import Animated, {
-  FadeInDown,
+  FadeIn,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { colors, shadow } from "@/constants/theme";
@@ -16,20 +16,20 @@ interface FABProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Floating compose action button — blue circle, shadow, press-scale. */
+/** Floating compose action button — blue circle, shadow, non-bouncy press scale. */
 export function FAB({ onPress, icon = "edit-3", style }: FABProps) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
     <Animated.View
-      entering={FadeInDown.springify().damping(16).delay(300)}
+      entering={FadeIn.duration(160)}
       style={[{ position: "absolute", right: 20, bottom: 24 }, style]}
     >
       <AnimatedPressable
         onPress={onPress}
-        onPressIn={() => (scale.value = withSpring(0.9, { damping: 14, stiffness: 320 }))}
-        onPressOut={() => (scale.value = withSpring(1, { damping: 14, stiffness: 320 }))}
+        onPressIn={() => (scale.value = withTiming(0.94, { duration: 120 }))}
+        onPressOut={() => (scale.value = withTiming(1, { duration: 120 }))}
         style={[
           {
             width: 60,

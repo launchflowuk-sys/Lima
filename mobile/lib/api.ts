@@ -17,6 +17,7 @@ export interface Message {
   fromName: string | null;
   fromAddress: string | null;
   bodyText: string | null;
+  bodyHtmlSanitized: string | null;
   snippet: string | null;
   sentAt: string | null;
 }
@@ -34,6 +35,85 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   isOwner: boolean;
+}
+
+/** Minimal { id, name } business reference used across list endpoints. */
+export interface BusinessRef {
+  id: string;
+  name: string;
+}
+
+export interface DashboardStats {
+  hasBusiness: boolean;
+  emailsReceivedToday: number;
+  repliesSentToday: number;
+  awaitingApproval: number;
+  needsAttention: number;
+  autoSentToday: number;
+  autoSendRate: number | null;
+  escalated: number;
+  followUpsDueToday: number;
+}
+export interface AnalyticsReport {
+  hasBusiness: boolean;
+  windowDays: number;
+  totalReceived: number;
+  totalSent: number;
+  autoSentCount: number;
+  autoSendRate: number | null;
+  intentBreakdown: Array<{ intent: string; count: number }>;
+  sentimentBreakdown: Array<{ sentiment: string; count: number }>;
+  estimatedAiCostUsd: number;
+}
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  linkPath: string | null;
+  isRead: boolean;
+  createdAt: string | null;
+}
+
+export interface Contact {
+  id: string;
+  businessId: string;
+  email: string;
+  name: string | null;
+  messageCount: number;
+  notes: string | null;
+  lastSeenAt: string | null;
+}
+
+export interface FollowUp {
+  id: string;
+  businessId: string;
+  threadId: string | null;
+  threadSubject: string | null;
+  dueAt: string | null;
+  reason: string | null;
+}
+
+export interface KnowledgeEntry {
+  id: string;
+  businessId: string;
+  title: string;
+  content: string;
+  kind: string;
+  priority: number;
+  isActive: boolean;
+}
+
+export interface AutomationRule {
+  id: string;
+  businessId: string;
+  name: string;
+  priority: number;
+  isActive: boolean;
+  conditions: unknown;
+  actions: unknown;
+  stopOnMatch: boolean;
 }
 
 async function request<T>(path: string, opts: { method?: string; body?: unknown; auth?: boolean } = {}): Promise<T> {
@@ -56,10 +136,28 @@ export const api = {
   login: (email: string, password: string) =>
     request<{ token: string; user: User }>("/auth/login", { method: "POST", body: { email, password }, auth: false }),
   me: () => request<{ user: User }>("/auth/me"),
+
   inbox: () => request<{ threads: Thread[] }>("/inbox"),
   thread: (id: string) => request<{ thread: Thread; messages: Message[] }>(`/threads/${id}`),
+
   approvals: () => request<{ drafts: Draft[] }>("/approvals"),
   approve: (id: string, finalBody?: string) =>
     request<{ ok: boolean }>(`/drafts/${id}/approve`, { method: "POST", body: { finalBody } }),
   reject: (id: string) => request<{ ok: boolean }>(`/drafts/${id}/reject`, { method: "POST" }),
+
+  analytics: () => request<{ stats: DashboardStats; report: AnalyticsReport }>("/analytics"),
+
+  notifications: () => request<{ unread: number; notifications: NotificationItem[] }>("/notifications"),
+  markNotification: (id: string) =>
+    request<{ ok: boolean }>("/notifications", { method: "POST", body: { id } }),
+  markAllNotifications: () =>
+    request<{ ok: boolean }>("/notifications", { method: "POST", body: { all: true } }),
+
+  contacts: () => request<{ businesses: BusinessRef[]; contacts: Contact[] }>("/contacts"),
+
+  followUps: () => request<{ followUps: FollowUp[] }>("/follow-ups"),
+
+  knowledge: () => request<{ businesses: BusinessRef[]; entries: KnowledgeEntry[] }>("/knowledge"),
+
+  automation: () => request<{ businesses: BusinessRef[]; rules: AutomationRule[] }>("/automation"),
 };

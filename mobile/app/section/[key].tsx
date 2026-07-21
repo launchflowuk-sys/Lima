@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, Text, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { Screen } from "@/components/ui";
 import { findSection } from "@/constants/sections";
@@ -38,7 +38,7 @@ export default function SectionScreen() {
       </View>
 
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32 }}>
-        <Animated.View entering={FadeInDown.springify().damping(15)} style={{ alignItems: "center" }}>
+        <Animated.View entering={FadeIn.duration(180)} style={{ alignItems: "center" }}>
           <View
             style={{
               width: 96,

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { router } from "expo-router";
 import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
 import { Button, Input, Screen } from "@/components/ui";
@@ -19,7 +19,7 @@ export default function Login() {
     setError(null);
     try {
       await signIn(email.trim(), password);
-      router.replace("/(app)/inbox");
+      router.replace("/(app)/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed");
       setLoading(false);
@@ -36,7 +36,7 @@ export default function Login() {
           contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 28 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View entering={FadeInDown.duration(420)} style={{ marginBottom: 36 }}>
+          <Animated.View entering={FadeIn.duration(180)} style={{ marginBottom: 36 }}>
             <View
               style={{
                 width: 72,
@@ -67,7 +67,7 @@ export default function Login() {
             </Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.duration(420).delay(100)} style={{ gap: 16 }}>
+          <Animated.View entering={FadeIn.duration(180).delay(60)} style={{ gap: 16 }}>
             <Input
               label="Email"
               icon="mail"
@@ -111,7 +111,7 @@ export default function Login() {
             </Animated.View>
           ) : null}
 
-          <Animated.View entering={FadeInDown.duration(420).delay(200)} style={{ marginTop: 28 }}>
+          <Animated.View entering={FadeIn.duration(180).delay(120)} style={{ marginTop: 28 }}>
             <Button label="Sign in" icon="arrow-right" onPress={onSubmit} loading={loading} />
           </Animated.View>
 

@@ -12,14 +12,14 @@ export interface SectionDef {
   built?: boolean;
 }
 
-/** The full 15-section menu, grouped sensibly. */
+/** The full 15-section menu, grouped sensibly. Every row routes to a real screen. */
 export const MENU_GROUPS: { heading: string; items: SectionDef[] }[] = [
   {
     heading: "Workspace",
     items: [
-      { key: "dashboard", title: "Dashboard", subtitle: "Overview & metrics", icon: "home", color: colors.primary },
+      { key: "dashboard", title: "Dashboard", subtitle: "Overview & metrics", icon: "home", color: colors.primary, route: "/(app)/dashboard", built: true },
       { key: "inbox", title: "Inbox", subtitle: "Conversations", icon: "inbox", color: colors.sky, route: "/(app)/inbox", built: true },
-      { key: "notifications", title: "Notifications", subtitle: "Alerts & activity", icon: "bell", color: colors.amber },
+      { key: "notifications", title: "Notifications", subtitle: "Alerts & activity", icon: "bell", color: colors.amber, built: true },
     ],
   },
   {
@@ -27,26 +27,26 @@ export const MENU_GROUPS: { heading: string; items: SectionDef[] }[] = [
     items: [
       { key: "approvals", title: "Approvals", subtitle: "Review AI drafts", icon: "check-circle", color: colors.emerald, route: "/(app)/approvals", built: true },
       { key: "followups", title: "Follow-ups", subtitle: "Scheduled replies", icon: "clock", color: colors.violet, route: "/(app)/followups", built: true },
-      { key: "automation", title: "Automation", subtitle: "Rules & workflows", icon: "zap", color: colors.amber },
+      { key: "automation", title: "Automation", subtitle: "Rules & workflows", icon: "zap", color: colors.amber, built: true },
     ],
   },
   {
     heading: "Directory",
     items: [
-      { key: "contacts", title: "Contacts", subtitle: "People you talk to", icon: "users", color: colors.sky },
-      { key: "businesses", title: "Businesses", subtitle: "Connected accounts", icon: "briefcase", color: colors.primary },
-      { key: "knowledge", title: "Knowledge", subtitle: "AI training & docs", icon: "book-open", color: colors.violet },
-      { key: "mailboxes", title: "Mailboxes", subtitle: "Connected inboxes", icon: "mail", color: colors.rose },
+      { key: "contacts", title: "Contacts", subtitle: "People you talk to", icon: "users", color: colors.sky, built: true },
+      { key: "businesses", title: "Businesses", subtitle: "Connected accounts", icon: "briefcase", color: colors.primary, built: true },
+      { key: "knowledge", title: "Knowledge", subtitle: "AI training & docs", icon: "book-open", color: colors.violet, built: true },
+      { key: "mailboxes", title: "Mailboxes", subtitle: "Connected inboxes", icon: "mail", color: colors.rose, built: true },
     ],
   },
   {
     heading: "Insights & admin",
     items: [
-      { key: "analytics", title: "Analytics", subtitle: "Performance reports", icon: "bar-chart-2", color: colors.emerald },
-      { key: "team", title: "Team", subtitle: "Members & roles", icon: "user-plus", color: colors.primary },
-      { key: "audit", title: "Audit", subtitle: "Activity log", icon: "file-text", color: colors.inkSoft },
-      { key: "system", title: "System health", subtitle: "Status & uptime", icon: "activity", color: colors.emerald },
-      { key: "settings", title: "Settings", subtitle: "Preferences", icon: "settings", color: colors.inkSoft },
+      { key: "analytics", title: "Analytics", subtitle: "Performance reports", icon: "bar-chart-2", color: colors.emerald, route: "/(app)/dashboard", built: true },
+      { key: "team", title: "Team", subtitle: "Members & roles", icon: "user-plus", color: colors.primary, built: true },
+      { key: "audit", title: "Audit", subtitle: "Activity log", icon: "file-text", color: colors.inkSoft, built: true },
+      { key: "system", title: "System health", subtitle: "Status & uptime", icon: "activity", color: colors.emerald, built: true },
+      { key: "settings", title: "Settings", subtitle: "Preferences", icon: "settings", color: colors.inkSoft, built: true },
     ],
   },
 ];
