@@ -4,9 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 // not import that module (it pulls in the Node-only db client). Keep the two in sync.
 const SESSION_COOKIE = "lima_session";
 
-// Paths reachable without a session. Everything else requires the cookie to be present; full
+// Paths reachable without a session cookie. Everything else requires the cookie to be present; full
 // validation (expiry, active user) still happens server-side via getCurrentUser.
-const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/reset-password", "/accept-invitation", "/api/auth"];
+// NOTE: `/api/v1` is the mobile/native JSON API — it authenticates with a Bearer token (no cookie)
+// and enforces auth itself via withApiUser, returning JSON 401s. It must bypass this cookie guard,
+// otherwise every native request (including the login endpoint) gets 307-redirected to the HTML
+// /login page and the app can never sign in.
+const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/reset-password", "/accept-invitation", "/api/auth", "/api/v1"];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
