@@ -1,5 +1,5 @@
 import "../global.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -15,7 +15,6 @@ import {
 } from "@expo-google-fonts/inter";
 import { AuthProvider } from "@/lib/auth";
 import { Splash } from "@/components/Splash";
-import { colors } from "@/constants/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -28,25 +27,35 @@ export default function RootLayout() {
     Inter_800ExtraBold,
   });
 
+  // Keep the branded opening screen visible for a beat so it's actually seen.
+  const [minElapsed, setMinElapsed] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMinElapsed(true), 1700);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Hand off from the native splash to our animated Splash as soon as fonts are ready.
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
   }, [fontsLoaded]);
+
+  const showSplash = !fontsLoaded || !minElapsed;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
           <StatusBar style="dark" />
-          {fontsLoaded ? (
+          {showSplash ? (
+            <Splash />
+          ) : (
             <Stack
               screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: colors.canvas },
-                animation: "slide_from_right",
+                contentStyle: { backgroundColor: "transparent" },
+                animation: "fade",
               }}
             />
-          ) : (
-            <Splash />
           )}
         </AuthProvider>
       </SafeAreaProvider>

@@ -1,20 +1,15 @@
 import type { ReactNode } from "react";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 interface AnimatedListItemProps {
   index: number;
   children: ReactNode;
 }
 
-/** Staggered spring entrance for list rows. */
+/** Subtle, non-bouncy fade-in for list rows (gentle stagger, no spring overshoot). */
 export function AnimatedListItem({ index, children }: AnimatedListItemProps) {
   return (
-    <Animated.View
-      entering={FadeInDown.springify()
-        .damping(18)
-        .stiffness(180)
-        .delay(Math.min(index, 10) * 55)}
-    >
+    <Animated.View entering={FadeIn.duration(180).delay(Math.min(index, 8) * 18)}>
       {children}
     </Animated.View>
   );

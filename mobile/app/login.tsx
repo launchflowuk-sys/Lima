@@ -27,7 +27,7 @@ export default function Login() {
   }
 
   return (
-    <Screen background={colors.surface} edges={["top", "bottom"]}>
+    <Screen edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -36,7 +36,7 @@ export default function Login() {
           contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 28 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View entering={FadeInDown.springify().damping(16)} style={{ marginBottom: 36 }}>
+          <Animated.View entering={FadeInDown.duration(420)} style={{ marginBottom: 36 }}>
             <View
               style={{
                 width: 72,
@@ -67,7 +67,7 @@ export default function Login() {
             </Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.springify().damping(16).delay(100)} style={{ gap: 16 }}>
+          <Animated.View entering={FadeInDown.duration(420).delay(100)} style={{ gap: 16 }}>
             <Input
               label="Email"
               icon="mail"
@@ -111,7 +111,7 @@ export default function Login() {
             </Animated.View>
           ) : null}
 
-          <Animated.View entering={FadeInDown.springify().damping(16).delay(200)} style={{ marginTop: 28 }}>
+          <Animated.View entering={FadeInDown.duration(420).delay(200)} style={{ marginTop: 28 }}>
             <Button label="Sign in" icon="arrow-right" onPress={onSubmit} loading={loading} />
           </Animated.View>
 

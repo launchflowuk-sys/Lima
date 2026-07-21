@@ -1,6 +1,8 @@
-import { Image, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { Loader } from "@/components/ui/Loader";
+import { APP_GRADIENT } from "@/components/ui/Screen";
 import { colors, font } from "@/constants/theme";
 
 /**
@@ -14,9 +16,9 @@ export function Splash() {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: colors.surface,
       }}
     >
+      <LinearGradient colors={APP_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={StyleSheet.absoluteFill} />
       <Animated.View
         entering={FadeInDown.springify().damping(14).stiffness(120)}
         style={{ alignItems: "center" }}
