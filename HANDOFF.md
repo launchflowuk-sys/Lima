@@ -64,19 +64,52 @@ drafting. In the compose deploy, `DATABASE_URL` points at the internal `postgres
   `$b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)`
   (PS 5.1 has no `::Fill` — use `.Create().GetBytes()`; a failed `::Fill` silently leaves an all-zero `AAAA…` value).
 
+## Mobile (Expo / EAS) — WIRED, first builds triggered (2026-07)
+The native app in `mobile/` (Expo SDK 57 + Expo Router) is fully connected to EAS and both store
+credential paths are validated by real builds.
+- **EAS project:** `@shoji147/launchflow-inbox`, projectId `d341b11d-6ae8-43f5-870f-27a2ffc17ca6`,
+  owner `shoji147`. Display name **Agent Lima**, bundle/package `com.launchflow.inbox`.
+  `expo.extra.apiUrl = https://agentlima.com`. `eas init` already run.
+- **Auth:** `EXPO_TOKEN` is a **User** env var on this PC → `eas` runs non-interactively. `eas whoami` = `shoji147`.
+- **Credentials live LOCALLY, git-ignored** in `mobile/credentials/` (NEVER commit; `.gitignore` blocks
+  `*.p8`/`*.p12`/`*-service-account.json`/`credentials/`):
+  - iOS: `AuthKey_2J2YAD9YTJ.p8` (App Store Connect API key). Key ID `2J2YAD9YTJ`, Issuer
+    `252f4cf6-a5b5-4d27-bba5-1cdb31a4db1a`, Team `64GY32R9Y2` (LaunchFlow UK Ltd, COMPANY_OR_ORGANIZATION).
+  - Android: `play-service-account.json` (SA `lima-eas-publisher@agen-lima-eas-builder.iam.gserviceaccount.com`,
+    invited into Play Console as Admin; Google Play Android Developer API enabled).
+  - Both wired in `mobile/eas.json` (`submit.production.ios` / `.android`, track `internal`).
+- **iOS build creds gotchas (keep):** first iOS build needs `EXPO_ASC_API_KEY_PATH` + `EXPO_ASC_KEY_ID` +
+  `EXPO_ASC_ISSUER_ID` + `EXPO_APPLE_TEAM_ID` + `EXPO_APPLE_TEAM_TYPE=COMPANY_OR_ORGANIZATION` in the shell so
+  EAS auto-creates the cert non-interactively. The distribution cert (`AD9DPR7PC3`) is now created on Expo's
+  servers and **reused** across Shoji's apps → future iOS builds run non-interactive with no env vars needed.
+  `EXPO_NO_CAPABILITY_SYNC=1` is persisted as a **User** env var (Apple capability-sync patch errors otherwise,
+  because Push is enabled on the App ID but not declared in the app yet).
+- **App records exist:** App Store Connect app (Agent Lima / com.launchflow.inbox) created; Play Console app
+  "Agent Lima" created. Apple App ID has Push capability enabled (fine; unused until push is wired).
+- **First builds:** Android `31caecb6-…` + iOS `ac95b265-…` triggered `--no-wait` (production profile).
+  Check: `cd mobile && eas build:list`.
+- **NOT yet done / next on mobile:** (1) confirm the two builds went green; (2) `eas submit` iOS→TestFlight
+  and Android→Play internal — **Google requires the FIRST `.aab` uploaded via the Play Console UI once** for a
+  brand-new app, then API submits work. **Always confirm with Shoji before any store submission.** (3) Wire
+  push notifications (expo-notifications) for approval alerts — then enable Push in app.json + re-enable capability sync.
+
 ## Pending / next steps
-- [ ] **Seed the owner login** on the fresh DB (no user exists yet). In your own SSH session:
+- [ ] **NEXT CODE WORK (no external creds needed): E2E (Playwright) + DB-backed integration tests.**
+      None exist yet — current 56 tests are all pure unit tests (`src/**/*.test.ts`). Target the critical
+      spine: login → connect IMAP mailbox → sync → inbox → generate AI draft → approve & send. Add a
+      seed→login→session→/dashboard integration test. Stand up Postgres/Redis (docker compose) for the run.
+      Recommend doing this in a fresh session (this one is long).
+- [ ] **Seed the owner login** on the live DB (no user exists yet). In your own SSH session:
       `WEB=$(docker ps --format '{{.Names}}' | grep '^web-pagnac4'); docker exec -e SEED_OWNER_EMAIL='you@example.com' -e SEED_OWNER_PASSWORD='a-strong-pw' "$WEB" pnpm db:seed`
       — then sign in at `https://agentlima.com/login`. (Classifier blocks Claude from running this with a password.)
-- [x] Coolify deploy of `agentlima.com` (TLS) — DONE, live.
-- [x] `OPENAI_API_KEY` in Coolify — already set (AI drafting enabled).
-- [ ] Optional: add a `healthcheck:` to the `web` compose service so Coolify reports `running:healthy`.
 - [ ] **Gmail + Microsoft providers** (`src/server/email/providers/{gmail,microsoft}.ts`) are honest
       skeletons — implement OAuth/sync/send. Needs Shoji's Google Cloud OAuth + Pub/Sub and Entra app creds.
-- [ ] **Mobile / EAS:** `EXPO_TOKEN` set as a user env var (account-scoped, all repos); Apple ASC API key +
-      Google Play service-account JSON uploaded to EAS once. Then `cd mobile && eas init && eas build && eas submit`
-      (confirm before any store submission). Set `expo.extra.apiUrl` to `https://agentlima.com`.
-- [ ] Automated E2E (Playwright) + integration tests to complement the 56 unit tests.
+- [ ] Finish mobile store submission (see Mobile section above) once builds are green.
+- [ ] Optional: add a `healthcheck:` to the `web` compose service so Coolify reports `running:healthy`.
+- [x] Coolify deploy of `agentlima.com` (TLS) — DONE, live.
+- [x] `OPENAI_API_KEY` in Coolify — set (AI drafting enabled).
+- [x] Mobile: EAS linked + iOS/Android credentials wired + first builds triggered.
+- [x] Notifications (Phase 8c) — actually built (in-app + email channels wired into the queue). BUILD_PROGRESS marker was stale.
 
 ## Tooling in a fresh session (IMPORTANT)
 - **Global Claude skills + `~/.claude/CLAUDE.md` ARE available here** — they're user-scoped, so opening Claude

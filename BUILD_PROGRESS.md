@@ -160,7 +160,11 @@ Remaining in Phase 1 (next):
 - NOTE: needs REDIS_URL + a running `pnpm worker` (docker-compose `worker`) + a connected IMAP mailbox to
   exercise end to end. App build unaffected (queues aren't imported by the web bundle).
 
-## ⬜ Phase 8c — Notifications (in-app + email/SMS/push adapters) wired to follow-ups/escalations/approvals
+## ✅ Phase 8c — Notifications (built) — in-app + email channels wired to follow-ups/escalations/approvals
+- `server/notifications/service.ts` + `channels.ts` + `db/schema/notifications.ts`; API route
+  `/api/v1/notifications`, `/notifications` page + actions; dispatched from `queues/processors.ts`.
+- In-app + email channels live. (SMS/push adapters are the remaining stubs; mobile push lands with the
+  expo-notifications work — see HANDOFF "Mobile".)
 ## ⬜ Phase 9 — Gmail + Microsoft OAuth/sync (code-complete; Shoji supplies creds) + E2E/integration tests
 ## ⬜ Phase 8 — Analytics, system health, hardening, tenant-isolation + e2e tests
 
@@ -173,7 +177,14 @@ JSON API with **Bearer-token auth** (same opaque-token session model as the web 
   `GET /threads/[id]`, `GET /approvals`, `POST /drafts/[id]/approve`, `POST /drafts/[id]/reject`
 - Native fetch isn't subject to CORS, so no CORS layer needed for the app.
 
-## 🟡 Mobile app (Expo) — scaffolded (typecheck clean; needs `npm install` + Expo Go to run)
+## ✅ Mobile app (Expo/EAS) — WIRED + first builds triggered (2026-07). See HANDOFF.md "Mobile" for full detail.
+- EAS project `@shoji147/launchflow-inbox` (projectId `d341b11d-…`), name "Agent Lima", bundle/pkg
+  `com.launchflow.inbox`, `apiUrl=https://agentlima.com`. `EXPO_TOKEN` set → non-interactive `eas`.
+- iOS ASC API key + Android Play service-account wired in `eas.json`, files git-ignored in `mobile/credentials/`.
+  iOS dist cert created + reused on Expo servers. `EXPO_NO_CAPABILITY_SYNC=1` persisted (User env var).
+- First Android + iOS production builds triggered (`eas build:list` to check). Store submit still pending
+  (Google needs first `.aab` uploaded via UI once; confirm with Shoji before any submission).
+- **Original scaffold note (kept for reference):**
 - `mobile/` — Expo Router + TS (SDK 57). Screens: `login`, `(app)/inbox`, `(app)/approvals` (approve/
   reject inline), `thread/[id]`. `lib/api.ts` typed client → `/api/v1`; `lib/token.ts` secure store
   (Keychain/Keystore); `lib/auth.tsx` context. `app.json` (bundle id com.launchflow.inbox), `eas.json`
