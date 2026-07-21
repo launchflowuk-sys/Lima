@@ -1,9 +1,17 @@
 import { useCallback, useState } from "react";
-import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { api, type Message, type Thread } from "@/lib/api";
+import { Loader } from "@/components/ui";
+import { fonts, spacing } from "@/constants/theme";
+import { useColors } from "@/lib/theme";
 
 export default function ThreadScreen() {
+  const c = useColors();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [thread, setThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -31,35 +39,73 @@ export default function ThreadScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <Stack.Screen options={{ title: thread?.subject || "Thread", headerBackTitle: "Inbox" }} />
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <StatusBar style="dark" />
+
+      {/* Modernist header — back arrow + subject over a 2px section rule. */}
+      <View
+        style={{
+          paddingTop: insets.top + spacing.md,
+          paddingBottom: spacing.md,
+          paddingHorizontal: spacing.xl,
+          borderBottomWidth: 2,
+          borderBottomColor: c.dividerStrong,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.md,
+        }}
+      >
+        <Pressable onPress={() => router.back()} hitSlop={10}>
+          <Feather name="arrow-left" size={22} color={c.text} />
+        </Pressable>
+        <Text style={{ flex: 1, fontFamily: fonts.heading, fontSize: 20, color: c.text }} numberOfLines={1}>
+          {thread?.subject || "Thread"}
+        </Text>
+      </View>
+
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 48 }} />
+        <View style={{ alignItems: "center", marginTop: spacing["3xl"] }}>
+          <Loader />
+        </View>
       ) : error ? (
-        <Text style={{ color: "#dc2626", padding: 16 }}>{error}</Text>
+        <Text style={{ color: c.danger, fontFamily: fonts.medium, padding: spacing.lg }}>{error}</Text>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 12 }}>
-          {messages.map((m) => (
-            <View
-              key={m.id}
-              style={{
-                backgroundColor: m.direction === "outbound" ? "#eff6ff" : "#fff",
-                borderWidth: 1,
-                borderColor: m.direction === "outbound" ? "#bfdbfe" : "#e2e8f0",
-                borderRadius: 12,
-                padding: 14,
-                marginBottom: 12,
-              }}
-            >
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ fontWeight: "700", color: "#0f172a" }} numberOfLines={1}>
-                  {m.fromName || m.fromAddress || "Unknown"}
+        <ScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}>
+          {messages.map((m) => {
+            const outbound = m.direction === "outbound";
+            return (
+              <View
+                key={m.id}
+                style={{
+                  borderWidth: outbound ? 2 : 1,
+                  borderColor: outbound ? c.primary : c.divider,
+                  borderRadius: 0,
+                  padding: spacing.lg,
+                  backgroundColor: c.surface,
+                }}
+              >
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: c.text }} numberOfLines={1}>
+                    {m.fromName || m.fromAddress || "Unknown"}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: fonts.heading,
+                      fontSize: 9,
+                      letterSpacing: 0.12 * 9,
+                      textTransform: "uppercase",
+                      color: outbound ? c.primary : c.textMuted,
+                    }}
+                  >
+                    {m.direction}
+                  </Text>
+                </View>
+                <Text style={{ color: c.textSoft, fontFamily: fonts.body, marginTop: 8, lineHeight: 20, fontSize: 13.5 }}>
+                  {m.bodyText || m.snippet || "(no content)"}
                 </Text>
-                <Text style={{ color: "#94a3b8", fontSize: 12 }}>{m.direction}</Text>
               </View>
-              <Text style={{ color: "#334155", marginTop: 8, lineHeight: 20 }}>{m.bodyText || m.snippet || "(no content)"}</Text>
-            </View>
-          ))}
+            );
+          })}
         </ScrollView>
       )}
     </View>

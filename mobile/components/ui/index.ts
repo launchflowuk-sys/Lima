@@ -7,3 +7,4 @@ export { Skeleton } from "./Skeleton";
 export { Loader } from "./Loader";
 export { AnimatedListItem } from "./AnimatedListItem";
 export { EmptyState } from "./EmptyState";
+export { Wordmark } from "./Wordmark";

@@ -1,47 +1,43 @@
 import { Text, View } from "react-native";
 import { MotiView } from "moti";
-import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, spacing } from "@/constants/theme";
+import { fonts, spacing } from "@/constants/theme";
+import { useColors } from "@/lib/theme";
 
 interface EmptyStateProps {
-  emoji?: string;
+  /** Uppercase micro-label above the heading. */
+  kicker?: string;
   title: string;
   message?: string;
 }
 
-/** Friendly empty-state with a gradient emoji badge and warm copy. */
-export function EmptyState({ emoji = "✨", title, message }: EmptyStateProps) {
+/** Editorial empty-state — a flat blue mark, heavy heading, restrained copy. */
+export function EmptyState({ kicker = "Nothing here", title, message }: EmptyStateProps) {
+  const c = useColors();
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 12 }}
+      from={{ opacity: 0, translateY: 8 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 400 }}
-      style={{ alignItems: "center", paddingHorizontal: spacing.xl, paddingTop: spacing["3xl"] }}
+      transition={{ type: "timing", duration: 300 }}
+      style={{ alignItems: "flex-start", paddingHorizontal: spacing.xl, paddingTop: spacing["3xl"] }}
     >
-      <LinearGradient
-        colors={gradients.brand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          width: 84,
-          height: 84,
-          borderRadius: 42,
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: spacing.lg,
-          shadowColor: colors.primary,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.3,
-          shadowRadius: 16,
-          elevation: 6,
-        }}
-      >
-        <Text style={{ fontSize: 38 }}>{emoji}</Text>
-      </LinearGradient>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md }}>
+        <View style={{ width: 14, height: 14, backgroundColor: c.primary }} />
+        <Text
+          style={{
+            fontFamily: fonts.heading,
+            fontSize: 10,
+            letterSpacing: 0.12 * 10,
+            textTransform: "uppercase",
+            color: c.primary,
+          }}
+        >
+          {kicker}
+        </Text>
+      </View>
 
-      <Text style={{ fontSize: 18, fontWeight: "800", color: colors.ink, textAlign: "center" }}>{title}</Text>
+      <Text style={{ fontFamily: fonts.heading, fontSize: 25, color: c.text, letterSpacing: -0.3 }}>{title}</Text>
       {message ? (
-        <Text style={{ fontSize: 14, color: colors.inkMuted, textAlign: "center", marginTop: 6, lineHeight: 20 }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: 14, color: c.textMuted, marginTop: 8, lineHeight: 21 }}>
           {message}
         </Text>
       ) : null}

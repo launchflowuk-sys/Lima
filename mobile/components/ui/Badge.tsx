@@ -1,33 +1,49 @@
 import { Text, View } from "react-native";
-import { radius, toneForStatus } from "@/constants/theme";
+import { fonts, statusMeta, tagColors, type TagVariant } from "@/constants/theme";
+import { useColors } from "@/lib/theme";
 
 interface BadgeProps {
-  /** Raw status string; resolved to a colour tone via the status map. */
-  status: string | null | undefined;
+  /** Raw status string; resolved to a variant + label via the status map. */
+  status?: string | null;
+  /** Force a specific tag variant (overrides status-derived variant). */
+  variant?: TagVariant;
   /** Override the displayed text (defaults to the humanised status label). */
   label?: string;
 }
 
-/** Accent-coloured pill driven by the status -> colour map in the theme. */
-export function Badge({ status, label }: BadgeProps) {
-  const tone = toneForStatus(status);
-  const text = label ?? tone.label;
+/**
+ * Small squared status tag (not a rounded pill). Filled blue for primary
+ * emphasis, outline for neutral/urgent — red reserved for escalated/urgent.
+ */
+export function Badge({ status, variant, label }: BadgeProps) {
+  const c = useColors();
+  const meta = statusMeta(status);
+  const resolved = variant ?? meta.variant;
+  const tag = tagColors(resolved, c);
+  const text = label ?? meta.label;
 
   return (
     <View
       style={{
-        flexDirection: "row",
-        alignItems: "center",
         alignSelf: "flex-start",
-        backgroundColor: tone.bg,
-        borderRadius: radius.full,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        gap: 6,
+        backgroundColor: tag.bg,
+        borderWidth: tag.bg === "transparent" ? 1 : 0,
+        borderColor: tag.border,
+        borderRadius: 0,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
       }}
     >
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: tone.color }} />
-      <Text style={{ color: tone.fg, fontSize: 12, fontWeight: "600" }}>{text}</Text>
+      <Text
+        style={{
+          color: tag.fg,
+          fontSize: 11,
+          fontFamily: fonts.medium,
+          letterSpacing: 0.02 * 11,
+        }}
+      >
+        {text}
+      </Text>
     </View>
   );
 }

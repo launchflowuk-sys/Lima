@@ -1,61 +1,58 @@
 import type { ReactNode } from "react";
 import { View, Text, type ViewStyle } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, gradients, spacing } from "@/constants/theme";
+import { fonts, spacing } from "@/constants/theme";
+import { useColors } from "@/lib/theme";
 
 interface ScreenProps {
   children: ReactNode;
-  /** Render a gradient brand header at the top of the screen. */
+  /** Optional flat editorial header (big Archivo title + 2px bottom rule). */
   header?: {
     title: string;
     subtitle?: string;
     right?: ReactNode;
   };
-  /** Background colour for the scroll/body area. Defaults to warm canvas. */
+  /** Background override. Defaults to the palette ground. */
   background?: string;
   contentStyle?: ViewStyle;
 }
 
 /**
- * SafeArea-aware themed screen wrapper with an optional gradient brand header.
- * The header consumes the top inset itself so content sits flush under it.
+ * SafeArea-aware screen wrapper. The optional header is flat and modernist —
+ * no gradient, no rounded corners — a heavy title over a 2px section rule.
  */
-export function Screen({ children, header, background = colors.canvas, contentStyle }: ScreenProps) {
+export function Screen({ children, header, background, contentStyle }: ScreenProps) {
+  const c = useColors();
   const insets = useSafeAreaInsets();
+  const bg = background ?? c.bg;
 
   return (
-    <View style={{ flex: 1, backgroundColor: background }}>
-      <StatusBar style={header ? "light" : "dark"} />
-
+    <View style={{ flex: 1, backgroundColor: bg }}>
       {header ? (
-        <LinearGradient
-          colors={gradients.header}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
           style={{
             paddingTop: insets.top + spacing.md,
-            paddingBottom: spacing.xl,
+            paddingBottom: spacing.lg,
             paddingHorizontal: spacing.xl,
-            borderBottomLeftRadius: 28,
-            borderBottomRightRadius: 28,
+            borderBottomWidth: 2,
+            borderBottomColor: c.dividerStrong,
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.white, fontSize: 26, fontWeight: "800", letterSpacing: -0.5 }}>
-                {header.title}
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: c.text, fontSize: 30, fontFamily: fonts.heading, letterSpacing: -0.4 }}>
+              {header.title}
+            </Text>
+            {header.subtitle ? (
+              <Text style={{ color: c.textMuted, fontSize: 13, fontFamily: fonts.body, marginTop: 4 }}>
+                {header.subtitle}
               </Text>
-              {header.subtitle ? (
-                <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, marginTop: 2 }}>
-                  {header.subtitle}
-                </Text>
-              ) : null}
-            </View>
-            {header.right ? <View style={{ marginLeft: spacing.md }}>{header.right}</View> : null}
+            ) : null}
           </View>
-        </LinearGradient>
+          {header.right ? <View style={{ marginLeft: spacing.md }}>{header.right}</View> : null}
+        </View>
       ) : (
         <View style={{ height: insets.top }} />
       )}

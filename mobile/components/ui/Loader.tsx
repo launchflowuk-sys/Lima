@@ -8,19 +8,20 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from "react-native-reanimated";
-import { colors } from "@/constants/theme";
+import { useColors } from "@/lib/theme";
 
 interface LoaderProps {
   size?: number;
   color?: string;
 }
 
-/** Smooth continuously-spinning Reanimated ring — no external asset needed. */
-export function Loader({ size = 28, color = colors.primary }: LoaderProps) {
+/** Continuously-spinning square-cornered ring — flat, no asset. */
+export function Loader({ size = 28, color }: LoaderProps) {
+  const c = useColors();
   const rotation = useSharedValue(0);
 
   useEffect(() => {
-    rotation.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false);
+    rotation.value = withRepeat(withTiming(360, { duration: 800, easing: Easing.linear }), -1, false);
     return () => cancelAnimation(rotation);
   }, [rotation]);
 
@@ -34,8 +35,8 @@ export function Loader({ size = 28, color = colors.primary }: LoaderProps) {
           height: size,
           borderRadius: size / 2,
           borderWidth: Math.max(2, size / 10),
-          borderColor: colors.hairline,
-          borderTopColor: color,
+          borderColor: c.divider,
+          borderTopColor: color ?? c.primary,
         },
         animatedStyle,
       ]}

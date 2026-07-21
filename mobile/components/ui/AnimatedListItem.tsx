@@ -7,13 +7,13 @@ interface AnimatedListItemProps {
   index?: number;
 }
 
-/** Fade + slide-up entrance, staggered by list index. */
+/** Restrained fade + small slide-up entrance, staggered by list index. */
 export function AnimatedListItem({ children, index = 0 }: AnimatedListItemProps) {
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 16 }}
+      from={{ opacity: 0, translateY: 8 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 350, delay: Math.min(index, 12) * 55 }}
+      transition={{ type: "timing", duration: 260, delay: Math.min(index, 10) * 40 }}
     >
       {children}
     </MotiView>

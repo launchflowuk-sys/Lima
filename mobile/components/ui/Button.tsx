@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, Text, View, type ViewStyle } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { colors, gradients, radius, spacing } from "@/constants/theme";
+import { fonts, spacing } from "@/constants/theme";
+import { useColors } from "@/lib/theme";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "danger" | "ghost";
 
 interface ButtonProps {
   label: string;
@@ -11,65 +12,79 @@ interface ButtonProps {
   variant?: Variant;
   loading?: boolean;
   disabled?: boolean;
+  /** Full-width, flush-left label (the mockup's "Approve & send" block). */
+  block?: boolean;
+  /** Optional trailing element (e.g. an arrow icon), pushed to the far right. */
+  rightIcon?: ReactNode;
   style?: ViewStyle;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
- * Primary gradient / secondary / ghost button with a Reanimated press-scale
- * animation and a built-in loading spinner state.
+ * Modernist flat button — sharp corners, solid blue (primary) / bordered
+ * (secondary) / solid red (danger) / text (ghost). Crisp, restrained press
+ * feedback (subtle scale + opacity). No gradients, no shadows.
  */
-export function Button({ label, onPress, variant = "primary", loading = false, disabled = false, style }: ButtonProps) {
+export function Button({
+  label,
+  onPress,
+  variant = "primary",
+  loading = false,
+  disabled = false,
+  block = false,
+  rightIcon,
+  style,
+}: ButtonProps) {
+  const c = useColors();
   const scale = useSharedValue(1);
   const isDisabled = disabled || loading;
-
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const base: ViewStyle = {
-    borderRadius: radius.lg,
-    paddingVertical: 15,
-    paddingHorizontal: spacing.xl,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: block ? "flex-start" : "center",
+    gap: spacing.sm,
+    borderRadius: 0,
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    width: block ? "100%" : undefined,
   };
 
-  const textColor = variant === "primary" ? colors.white : variant === "secondary" ? colors.ink : colors.primary;
+  const skin: ViewStyle =
+    variant === "primary"
+      ? { backgroundColor: c.primary, borderColor: c.primary }
+      : variant === "danger"
+        ? { backgroundColor: c.danger, borderColor: c.danger }
+        : variant === "secondary"
+          ? { backgroundColor: "transparent", borderColor: c.dividerStrong }
+          : { backgroundColor: "transparent", borderColor: "transparent" };
 
-  const content = loading ? (
-    <ActivityIndicator color={textColor} />
-  ) : (
-    <Text style={{ color: textColor, fontWeight: "700", fontSize: 16 }}>{label}</Text>
-  );
+  const textColor =
+    variant === "primary" || variant === "danger"
+      ? c.primaryFg
+      : variant === "ghost"
+        ? c.primary
+        : c.text;
 
   return (
     <AnimatedPressable
       onPress={onPress}
       disabled={isDisabled}
-      onPressIn={() => (scale.value = withTiming(0.96, { duration: 90 }))}
-      onPressOut={() => (scale.value = withTiming(1, { duration: 140 }))}
-      style={[animatedStyle, { opacity: isDisabled ? 0.6 : 1 }, style]}
+      onPressIn={() => (scale.value = withTiming(0.98, { duration: 80 }))}
+      onPressOut={() => (scale.value = withTiming(1, { duration: 120 }))}
+      style={[base, skin, animatedStyle, { opacity: isDisabled ? 0.45 : 1 }, style]}
     >
-      {variant === "primary" ? (
-        <LinearGradient
-          colors={gradients.primaryButton}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={base}
-        >
-          {content}
-        </LinearGradient>
+      {loading ? (
+        <ActivityIndicator color={textColor} />
       ) : (
-        <View
-          style={[
-            base,
-            variant === "secondary"
-              ? { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.hairline }
-              : { backgroundColor: "transparent" },
-          ]}
-        >
-          {content}
-        </View>
+        <>
+          <Text style={{ color: textColor, fontFamily: fonts.heading, fontSize: 15 }}>{label}</Text>
+          {rightIcon ? <View style={{ marginLeft: "auto" }}>{rightIcon}</View> : null}
+        </>
       )}
     </AnimatedPressable>
   );

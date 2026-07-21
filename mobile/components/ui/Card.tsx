@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { colors, radius, spacing } from "@/constants/theme";
+import { spacing } from "@/constants/theme";
+import { useColors } from "@/lib/theme";
 
 interface CardProps {
   children: ReactNode;
@@ -13,29 +14,24 @@ interface CardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const cardBase: ViewStyle = {
-  backgroundColor: colors.surface,
-  borderRadius: radius.xl,
-  padding: spacing.lg,
-  // Soft layered shadow.
-  shadowColor: "#1C1917",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.06,
-  shadowRadius: 12,
-  elevation: 2,
-};
-
 /**
- * Rounded, softly-shadowed surface. When `onPress` is provided it becomes a
- * pressable with a subtle Reanimated press-scale animation.
+ * Sharp, bordered surface — flat (no shadow, no radius). When `onPress` is
+ * provided it becomes a pressable with restrained opacity feedback.
  */
 export function Card({ children, onPress, accent, style }: CardProps) {
-  const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const c = useColors();
+  const opacity = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
-  const accentStyle: ViewStyle = accent
-    ? { borderLeftWidth: 4, borderLeftColor: accent }
-    : {};
+  const cardBase: ViewStyle = {
+    backgroundColor: c.surface,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: c.divider,
+    padding: spacing.lg,
+  };
+
+  const accentStyle: ViewStyle = accent ? { borderLeftWidth: 3, borderLeftColor: accent } : {};
 
   if (!onPress) {
     return <View style={[cardBase, accentStyle, style]}>{children}</View>;
@@ -44,8 +40,8 @@ export function Card({ children, onPress, accent, style }: CardProps) {
   return (
     <AnimatedPressable
       onPress={onPress}
-      onPressIn={() => (scale.value = withTiming(0.98, { duration: 90 }))}
-      onPressOut={() => (scale.value = withTiming(1, { duration: 140 }))}
+      onPressIn={() => (opacity.value = withTiming(0.7, { duration: 80 }))}
+      onPressOut={() => (opacity.value = withTiming(1, { duration: 140 }))}
       style={[cardBase, accentStyle, animatedStyle, style]}
     >
       {children}
