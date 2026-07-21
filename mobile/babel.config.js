@@ -5,7 +5,7 @@ module.exports = function (api) {
       ["babel-preset-expo", { jsxImportSource: "nativewind" }],
       "nativewind/babel",
     ],
-    // react-native-worklets/plugin is the Reanimated 4 (SDK 56) plugin and MUST be last.
+    // react-native-worklets/plugin is the Reanimated 4 (SDK 54) plugin and MUST be last.
     plugins: ["react-native-worklets/plugin"],
   };
 };
