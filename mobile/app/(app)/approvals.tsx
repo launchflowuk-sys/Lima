@@ -1,22 +1,36 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, Text, TextInput, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { api, type Draft } from "@/lib/api";
+import {
+  AnimatedListItem,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Screen,
+  SectionHeader,
+  SkeletonList,
+} from "@/components/ui";
+import { colors, font, radius } from "@/constants/theme";
 
 export default function Approvals() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busy, setBusy] = useState<{ id: string; kind: "approve" | "reject" } | null>(null);
 
-  const load = useCallback(async () => {
-    setRefreshing(true);
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     try {
       const { drafts } = await api.approvals();
       setDrafts(drafts);
     } catch (e) {
       Alert.alert("Error", e instanceof Error ? e.message : "Failed to load");
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   }, []);
@@ -28,7 +42,7 @@ export default function Approvals() {
   );
 
   async function act(id: string, kind: "approve" | "reject") {
-    setBusyId(id);
+    setBusy({ id, kind });
     try {
       if (kind === "approve") await api.approve(id, edits[id]);
       else await api.reject(id);
@@ -36,51 +50,116 @@ export default function Approvals() {
     } catch (e) {
       Alert.alert(kind === "approve" ? "Send failed" : "Reject failed", e instanceof Error ? e.message : "Error");
     } finally {
-      setBusyId(null);
+      setBusy(null);
     }
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <FlatList
-        data={drafts}
-        keyExtractor={(d) => d.id}
-        contentContainerStyle={{ padding: 12 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
-        ListEmptyComponent={
-          !refreshing ? <Text style={{ textAlign: "center", color: "#94a3b8", marginTop: 48 }}>Nothing to approve.</Text> : null
-        }
-        renderItem={({ item }) => (
-          <View style={{ backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#e2e8f0", padding: 14, marginBottom: 12 }}>
-            <Text style={{ fontWeight: "700", color: "#0f172a" }} numberOfLines={1}>{item.threadSubject || "(no subject)"}</Text>
-            {item.autoSendBlockedReason ? (
-              <Text style={{ color: "#d97706", fontSize: 12, marginTop: 2 }}>Needs a human: {item.autoSendBlockedReason}</Text>
-            ) : null}
-            <TextInput
-              multiline
-              defaultValue={item.bodyText}
-              onChangeText={(t) => setEdits((e) => ({ ...e, [item.id]: t }))}
-              style={{ marginTop: 10, minHeight: 120, borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 8, padding: 10, fontSize: 14, textAlignVertical: "top" }}
+    <Screen>
+      <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+        <SectionHeader
+          title="Approvals"
+          subtitle={loading ? "Loading drafts…" : drafts.length ? `${drafts.length} awaiting review` : "Draft replies to review"}
+        />
+      </View>
+
+      {loading ? (
+        <View style={{ paddingHorizontal: 20 }}>
+          <SkeletonList count={3} />
+        </View>
+      ) : (
+        <FlatList
+          data={drafts}
+          keyExtractor={(d) => d.id}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={() => load(true)}
+          ListEmptyComponent={
+            <EmptyState
+              icon="check-circle"
+              title="Nothing to approve"
+              subtitle="AI-drafted replies waiting on you will show up here."
             />
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-              <Pressable
-                onPress={() => act(item.id, "approve")}
-                disabled={busyId === item.id}
-                style={{ flex: 1, backgroundColor: "#2563eb", borderRadius: 8, paddingVertical: 12, alignItems: "center", opacity: busyId === item.id ? 0.6 : 1 }}
-              >
-                {busyId === item.id ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Approve & send</Text>}
-              </Pressable>
-              <Pressable
-                onPress={() => act(item.id, "reject")}
-                disabled={busyId === item.id}
-                style={{ borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16, alignItems: "center" }}
-              >
-                <Text style={{ color: "#475569", fontWeight: "600" }}>Reject</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      />
-    </View>
+          }
+          renderItem={({ item, index }) => {
+            const isBusy = busy?.id === item.id;
+            return (
+              <AnimatedListItem index={index}>
+                <Card style={{ marginBottom: 14 }}>
+                  <Text style={{ fontFamily: font.bold, fontSize: 16, color: colors.ink }} numberOfLines={2}>
+                    {item.threadSubject || item.subject || "(no subject)"}
+                  </Text>
+
+                  {item.autoSendBlockedReason ? (
+                    <View style={{ marginTop: 8 }}>
+                      <Badge
+                        label={`Needs a human · ${item.autoSendBlockedReason}`}
+                        fg={colors.amber}
+                        bg="#FFFBEB"
+                      />
+                    </View>
+                  ) : (
+                    <View style={{ marginTop: 8 }}>
+                      <Badge label="AI drafted" fg={colors.violet} bg="#F5F3FF" dot />
+                    </View>
+                  )}
+
+                  <View
+                    style={{
+                      marginTop: 14,
+                      backgroundColor: colors.canvas,
+                      borderRadius: radius.lg,
+                      padding: 14,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <Feather name="edit-2" size={13} color={colors.inkMuted} />
+                      <Text style={{ fontFamily: font.semibold, fontSize: 12, color: colors.inkMuted }}>
+                        Draft reply — tap to edit
+                      </Text>
+                    </View>
+                    <TextInput
+                      multiline
+                      defaultValue={item.bodyText}
+                      onChangeText={(t) => setEdits((e) => ({ ...e, [item.id]: t }))}
+                      style={{
+                        minHeight: 110,
+                        fontFamily: font.regular,
+                        fontSize: 15,
+                        color: colors.ink,
+                        lineHeight: 22,
+                        textAlignVertical: "top",
+                      }}
+                    />
+                  </View>
+
+                  <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
+                    <Button
+                      label="Approve & send"
+                      icon="send"
+                      onPress={() => act(item.id, "approve")}
+                      loading={isBusy && busy?.kind === "approve"}
+                      disabled={isBusy}
+                      style={{ flex: 1 }}
+                      full={false}
+                    />
+                    <Button
+                      label="Reject"
+                      variant="secondary"
+                      onPress={() => act(item.id, "reject")}
+                      loading={isBusy && busy?.kind === "reject"}
+                      disabled={isBusy}
+                      full={false}
+                      style={{ width: 120 }}
+                    />
+                  </View>
+                </Card>
+              </AnimatedListItem>
+            );
+          }}
+        />
+      )}
+    </Screen>
   );
 }

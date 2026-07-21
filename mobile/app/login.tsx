@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
+import { Button, Input, Screen } from "@/components/ui";
+import { colors, font } from "@/constants/theme";
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -23,41 +27,107 @@ export default function Login() {
   }
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#f8fafc" }}>
-      <Text style={{ fontSize: 22, fontWeight: "700", color: "#0f172a" }}>LaunchFlow Inbox</Text>
-      <Text style={{ marginTop: 4, marginBottom: 24, color: "#64748b" }}>Sign in to your workspace</Text>
-
-      <Text style={{ fontSize: 13, fontWeight: "600", color: "#334155", marginBottom: 6 }}>Email</Text>
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={inputStyle}
-      />
-
-      <Text style={{ fontSize: 13, fontWeight: "600", color: "#334155", marginTop: 16, marginBottom: 6 }}>Password</Text>
-      <TextInput value={password} onChangeText={setPassword} secureTextEntry style={inputStyle} />
-
-      {error ? <Text style={{ color: "#dc2626", marginTop: 12 }}>{error}</Text> : null}
-
-      <Pressable
-        onPress={onSubmit}
-        disabled={loading}
-        style={{ marginTop: 24, backgroundColor: "#2563eb", borderRadius: 10, paddingVertical: 14, alignItems: "center", opacity: loading ? 0.6 : 1 }}
+    <Screen background={colors.surface} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Sign in</Text>}
-      </Pressable>
-    </View>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 28 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View entering={FadeInDown.springify().damping(16)} style={{ marginBottom: 36 }}>
+            <View
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 22,
+                backgroundColor: colors.surface,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 24,
+                shadowColor: colors.primary,
+                shadowOpacity: 0.2,
+                shadowRadius: 20,
+                shadowOffset: { width: 0, height: 10 },
+                elevation: 8,
+              }}
+            >
+              <Image
+                source={require("@/assets/images/icon.png")}
+                style={{ width: 54, height: 54, borderRadius: 16 }}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={{ fontFamily: font.extrabold, fontSize: 32, color: colors.ink, letterSpacing: -0.6 }}>
+              Welcome back
+            </Text>
+            <Text style={{ fontFamily: font.regular, fontSize: 16, color: colors.inkMuted, marginTop: 6 }}>
+              Sign in to your Agent Lima workspace
+            </Text>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.springify().damping(16).delay(100)} style={{ gap: 16 }}>
+            <Input
+              label="Email"
+              icon="mail"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              placeholder="you@business.com"
+              returnKeyType="next"
+            />
+            <Input
+              label="Password"
+              icon="lock"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholder="••••••••"
+              returnKeyType="done"
+              onSubmitEditing={onSubmit}
+            />
+          </Animated.View>
+
+          {error ? (
+            <Animated.View
+              entering={FadeIn}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                backgroundColor: "#FFF1F2",
+                borderRadius: 14,
+                padding: 12,
+                marginTop: 18,
+              }}
+            >
+              <Feather name="alert-circle" size={16} color={colors.rose} />
+              <Text style={{ color: colors.rose, fontFamily: font.medium, fontSize: 13.5, flex: 1 }}>
+                {error}
+              </Text>
+            </Animated.View>
+          ) : null}
+
+          <Animated.View entering={FadeInDown.springify().damping(16).delay(200)} style={{ marginTop: 28 }}>
+            <Button label="Sign in" icon="arrow-right" onPress={onSubmit} loading={loading} />
+          </Animated.View>
+
+          <Text
+            style={{
+              textAlign: "center",
+              color: colors.inkMuted,
+              fontFamily: font.regular,
+              fontSize: 12.5,
+              marginTop: 28,
+            }}
+          >
+            Powered by LaunchFlow
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
-
-const inputStyle = {
-  borderWidth: 1,
-  borderColor: "#cbd5e1",
-  borderRadius: 10,
-  paddingHorizontal: 12,
-  paddingVertical: 12,
-  fontSize: 16,
-  backgroundColor: "#fff",
-} as const;
