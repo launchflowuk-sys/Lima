@@ -6,7 +6,10 @@ import * as schema from "./schema";
 /**
  * Lazily-initialised Drizzle client. The postgres pool (and therefore env validation) is created on
  * FIRST query, not at import — so `next build` can import server modules without DATABASE_URL being
- * present. In dev the pool is stashed on globalThis to survive hot reloads.
+ * present. The pool + client are memoised on globalThis as a true SINGLETON in EVERY environment
+ * (dev: survives hot reloads; prod: one bounded pool per process). This is critical — without prod
+ * memoisation the `db` Proxy would open a fresh postgres pool on every query and exhaust Postgres's
+ * connection slots ("sorry, too many clients already").
  */
 type DrizzleClient = ReturnType<typeof drizzle<typeof schema>>;
 const globalForDb = globalThis as unknown as { __limaSql?: ReturnType<typeof postgres>; __limaDb?: DrizzleClient };
@@ -14,9 +17,9 @@ const globalForDb = globalThis as unknown as { __limaSql?: ReturnType<typeof pos
 function init(): DrizzleClient {
   if (globalForDb.__limaDb) return globalForDb.__limaDb;
   const sql = globalForDb.__limaSql ?? postgres(env.DATABASE_URL, { max: 10 });
-  if (env.NODE_ENV !== "production") globalForDb.__limaSql = sql;
+  globalForDb.__limaSql = sql;
   const client = drizzle(sql, { schema, casing: "snake_case" });
-  if (env.NODE_ENV !== "production") globalForDb.__limaDb = client;
+  globalForDb.__limaDb = client;
   return client;
 }
 
