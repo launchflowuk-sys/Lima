@@ -7,6 +7,7 @@ import { getProvider } from "@/server/email/providers/registry";
 import { recordAudit } from "@/server/audit/log";
 import { listBusinessesForUser } from "@/server/businesses/service";
 import { syncImapMailbox } from "@/server/email/sync/imap-sync";
+import { syncGmailMailbox } from "@/server/email/sync/gmail-sync";
 
 export type Mailbox = typeof mailboxes.$inferSelect;
 
@@ -143,10 +144,10 @@ export async function syncMailbox(user: AuthUser, mailboxId: string): Promise<{ 
   if (!mailbox) throw new Error("Mailbox not found");
   assertBusinessAccess(user, mailbox.businessId);
   assertPermission(user, mailbox.businessId, "mailbox.manage");
-  if (mailbox.provider !== "imap_smtp") {
-    throw new Error("Live sync is currently available for IMAP/SMTP mailboxes only");
+  if (mailbox.provider !== "imap_smtp" && mailbox.provider !== "gmail") {
+    throw new Error("Live sync is currently available for Gmail and IMAP/SMTP mailboxes only");
   }
-  const result = await syncImapMailbox(mailbox);
+  const result = mailbox.provider === "gmail" ? await syncGmailMailbox(mailbox) : await syncImapMailbox(mailbox);
   await recordAudit({
     businessId: mailbox.businessId,
     actorUserId: user.id,

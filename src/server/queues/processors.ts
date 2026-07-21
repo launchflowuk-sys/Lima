@@ -1,9 +1,10 @@
-import { and, eq, isNull, lte } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { mailboxes, emailThreads, replyDrafts, followUps } from "@/server/db/schema";
 import { env } from "@/env";
 import { logger } from "@/server/logger";
 import { syncImapMailbox } from "@/server/email/sync/imap-sync";
+import { syncGmailMailbox } from "@/server/email/sync/gmail-sync";
 import { generateDraftForThreadSystem } from "@/server/drafts/service";
 import { notifyUser } from "@/server/notifications/service";
 import { enqueueDrafts, getSyncQueue, type SyncJob, type DraftJob } from "./queues";
@@ -17,7 +18,7 @@ export async function processSyncJob(data: SyncJob): Promise<void> {
     const connected = await db
       .select({ id: mailboxes.id })
       .from(mailboxes)
-      .where(and(eq(mailboxes.provider, "imap_smtp"), eq(mailboxes.status, "connected")));
+      .where(and(inArray(mailboxes.provider, ["imap_smtp", "gmail"]), eq(mailboxes.status, "connected")));
     const q = getSyncQueue();
     for (const m of connected) {
       await q.add("sync", { mailboxId: m.id }, { jobId: `sync:${m.id}:${Date.now()}` });
@@ -28,9 +29,10 @@ export async function processSyncJob(data: SyncJob): Promise<void> {
 
   const [mailbox] = await db.select().from(mailboxes).where(eq(mailboxes.id, data.mailboxId)).limit(1);
   if (!mailbox) return;
-  if (mailbox.provider !== "imap_smtp") return; // Gmail/Microsoft get their own sync in their phases.
+  if (mailbox.provider !== "imap_smtp" && mailbox.provider !== "gmail") return; // Microsoft gets its own sync in its phase.
 
-  const { ingested, inboundThreadIds } = await syncImapMailbox(mailbox);
+  const { ingested, inboundThreadIds } =
+    mailbox.provider === "gmail" ? await syncGmailMailbox(mailbox) : await syncImapMailbox(mailbox);
   logger.info({ mailboxId: mailbox.id, ingested, newThreads: inboundThreadIds.length }, "queue: mailbox synced");
   await enqueueDrafts(inboundThreadIds);
 }
