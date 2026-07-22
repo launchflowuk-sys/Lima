@@ -48,7 +48,7 @@ export function getFollowUpQueue(): Queue {
 export async function enqueueDrafts(threadIds: string[]): Promise<void> {
   if (!threadIds.length) return;
   const q = getDraftQueue();
-  await q.addBulk(threadIds.map((threadId) => ({ name: "draft", data: { threadId }, opts: { jobId: `draft:${threadId}` } })));
+  await q.addBulk(threadIds.map((threadId) => ({ name: "draft", data: { threadId }, opts: { jobId: `draft-${threadId}` } })));
 }
 
 /** Enqueue a sync for one mailbox now (used by the app's "Sync now" button to run it in the background). */
