@@ -9,6 +9,8 @@ import { listBusinessesForUser } from "@/server/businesses/service";
 import { syncImapMailbox } from "@/server/email/sync/imap-sync";
 import { syncGmailMailbox } from "@/server/email/sync/gmail-sync";
 import { syncMicrosoftMailbox } from "@/server/email/sync/microsoft-sync";
+import { enqueueDrafts } from "@/server/queues/queues";
+import { logger } from "@/server/logger";
 
 export type Mailbox = typeof mailboxes.$inferSelect;
 
@@ -155,13 +157,23 @@ export async function syncMailbox(user: AuthUser, mailboxId: string): Promise<{ 
           : (() => {
               throw new Error("Live sync is currently available for Gmail, Microsoft, and IMAP/SMTP mailboxes only");
             })();
+
+  // Manual "Sync now" must draft too, exactly like the worker's sync path — otherwise threads ingested
+  // here would sit as needs_reply with no draft until the periodic draft-scan catches them. Best-effort:
+  // a Redis/queue hiccup must never fail the sync the user just triggered (draft-scan is the safety net).
+  try {
+    await enqueueDrafts(result.inboundThreadIds);
+  } catch (err) {
+    logger.error({ err, mailboxId }, "sync: failed to enqueue drafts after manual sync");
+  }
+
   await recordAudit({
     businessId: mailbox.businessId,
     actorUserId: user.id,
     action: "mailbox.synced",
     entityType: "mailbox",
     entityId: mailboxId,
-    metadata: { ingested: result.ingested },
+    metadata: { ingested: result.ingested, drafted: result.inboundThreadIds.length },
   });
-  return result;
+  return { ingested: result.ingested };
 }

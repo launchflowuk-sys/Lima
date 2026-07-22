@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, lte } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte, notExists } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { mailboxes, emailThreads, replyDrafts, followUps } from "@/server/db/schema";
 import { env } from "@/env";
@@ -64,6 +64,43 @@ export async function processDraftJob(data: DraftJob): Promise<void> {
 
   await generateDraftForThreadSystem(data.threadId);
   logger.info({ threadId: data.threadId }, "queue: draft generated");
+}
+
+/** How many threads one draft-scan pass will backfill, so a large backlog can't flood the draft queue. */
+const DRAFT_SCAN_BATCH = 20;
+
+/**
+ * Draft-scan sweep. Finds `needs_reply` threads that have NO `pending_approval` reply draft and enqueues
+ * drafting for each (capped at DRAFT_SCAN_BATCH per run). This makes drafting resilient regardless of how
+ * mail was ingested — it backfills threads that were synced through paths which didn't enqueue drafting
+ * (e.g. the manual "Sync now" before it was wired, or any historical backlog). Idempotent: the draft
+ * queue dedupes on jobId and processDraftJob re-checks status + existing drafts, so overlapping runs are
+ * safe. Skips entirely when no AI is configured.
+ */
+export async function processDraftScan(): Promise<void> {
+  if (!env.OPENAI_API_KEY) {
+    logger.warn("queue: OPENAI_API_KEY not set, skipping draft scan");
+    return;
+  }
+  const threads = await db
+    .select({ id: emailThreads.id })
+    .from(emailThreads)
+    .where(
+      and(
+        eq(emailThreads.status, "needs_reply"),
+        notExists(
+          db
+            .select({ one: replyDrafts.id })
+            .from(replyDrafts)
+            .where(and(eq(replyDrafts.threadId, emailThreads.id), eq(replyDrafts.status, "pending_approval"))),
+        ),
+      ),
+    )
+    .limit(DRAFT_SCAN_BATCH);
+
+  if (!threads.length) return;
+  await enqueueDrafts(threads.map((t) => t.id));
+  logger.info({ enqueued: threads.length }, "queue: draft scan enqueued backfill drafts");
 }
 
 /**

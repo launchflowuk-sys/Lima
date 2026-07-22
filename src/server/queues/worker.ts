@@ -2,8 +2,8 @@ import { Worker } from "bullmq";
 import { logger } from "@/server/logger";
 import { env } from "@/env";
 import { getRedisConnection } from "./connection";
-import { QUEUE_SYNC, QUEUE_DRAFT, QUEUE_FOLLOWUP, registerRepeatableJobs, type SyncJob, type DraftJob } from "./queues";
-import { processSyncJob, processDraftJob, processFollowUpScan } from "./processors";
+import { QUEUE_SYNC, QUEUE_DRAFT, QUEUE_DRAFT_SCAN, QUEUE_FOLLOWUP, registerRepeatableJobs, type SyncJob, type DraftJob } from "./queues";
+import { processSyncJob, processDraftJob, processDraftScan, processFollowUpScan } from "./processors";
 
 /**
  * Background worker entrypoint (separate process from the web app — see docker-compose `worker`).
@@ -18,6 +18,7 @@ async function main() {
   const workers: Worker[] = [
     new Worker<SyncJob>(QUEUE_SYNC, (job) => processSyncJob(job.data), { connection, concurrency: 3 }),
     new Worker<DraftJob>(QUEUE_DRAFT, (job) => processDraftJob(job.data), { connection, concurrency: 2 }),
+    new Worker(QUEUE_DRAFT_SCAN, () => processDraftScan(), { connection, concurrency: 1 }),
     new Worker(QUEUE_FOLLOWUP, () => processFollowUpScan(), { connection, concurrency: 1 }),
   ];
 
@@ -27,7 +28,7 @@ async function main() {
   }
 
   await registerRepeatableJobs();
-  logger.info("Lima worker started (sync, draft, follow-up)");
+  logger.info("Lima worker started (sync, draft, draft-scan, follow-up)");
 
   const shutdown = async () => {
     logger.info("Worker shutting down…");
