@@ -93,6 +93,39 @@ credential paths are validated by real builds.
   brand-new app, then API submits work. **Always confirm with Shoji before any store submission.** (3) Wire
   push notifications (expo-notifications) for approval alerts — then enable Push in app.json + re-enable capability sync.
 
+## ⭐ CURRENT STATE — 2026-07-22 (read this first)
+
+**Mobile app is now the main focus.** It's a premium, LIGHT, rounded, big-card app (Spark/Revolut/Stripe
+vibe, Inter font, blue `#2563EB`, soft blue gradient bg) — Shoji approved the look. Lives in `mobile/`.
+- **Expo SDK is pinned to 54** (`expo@54.0.36`) because Shoji's App Store Expo Go only supports SDK 54.
+  Do NOT bump it. Verify any mobile change with `cd mobile && npx expo export --platform ios`.
+- **Test on device:** `cd mobile && npm run tunnel` (script added; `@expo/ngrok` bundled → works off-wifi).
+  Tunnel URL printed via ngrok API `curl 127.0.0.1:4040/api/tunnels`. NOTE: any tunnel/watcher started by a
+  Claude session dies with that session — Shoji just reruns `npm run tunnel`.
+- Design system: `mobile/components/ui/*`, tokens `mobile/constants/theme.ts`, `Screen` exports `APP_GRADIENT`.
+  Rules Shoji cares about: LIGHT, rounded, big cards, fat buttons, bold Inter headings, **NO bounce/spring
+  animations** (only short fades), colourful bento dashboard = home screen, real formatted email view.
+
+**Shoji's roadmap — do IN ORDER (1→5):**
+1. **Make it actually work** — IN PROGRESS/just shipped (see below).
+2. **Full mobile functionality** — every desktop action available + working on mobile (settings, knowledge,
+   automation, mailbox connect, etc.) — NOT "manage on desktop" placeholders.
+3. **Restyle the DESKTOP web UI to match the new mobile design** (parity — desktop is still the old plain look).
+4. **Learning loop** — agent suggests which categories to auto-send based on the user's edit patterns.
+5. **Proper header panels** everywhere (filled/coloured header with background + real actions, not plain
+   text on white — see the thread-screen header Shoji flagged).
+
+**#1 just shipped (commit `6307583` server + mobile commit after):**
+- Root cause of "agent did nothing in hours": mail ingested via manual **Sync now** never enqueued drafting;
+  worker only drafted what IT ingested (nothing). Fixed: new **draft-scan** repeatable worker job (every 2m,
+  drafts any `needs_reply` thread with no pending draft, cap 20) → backfills; manual sync now enqueues drafts
+  too; `POST /api/v1/threads/[id]/draft` on-demand; `GET /api/v1/threads/[id]` now returns the pending draft.
+- Mobile: thread screen shows/edits the AI draft → **Approve & send** / **Reject** / **Generate AI reply**;
+  fixed the `react-native-render-html` crash (strip non-http(s) `<img>` in `mobile/components/ui/HtmlBody.tsx`).
+- **VERIFY it worked:** on the box, `reply_drafts` + `ai_usage_records` should go from 0 → >0 after redeploy.
+  Live data: 1 IMAP mailbox (Grays CabLine, `draft_only`), 18 msgs / 14 `needs_reply` threads.
+- SSH DB peek: `PG=$(docker ps --format '{{.Names}}'|grep '^postgres-pagnac'|head -1); docker exec "$PG" psql -U lima -d "$(docker exec "$PG" printenv POSTGRES_DB)" -tAc "select count(*) from reply_drafts"`
+
 ## Pending / next steps
 - [ ] **NEXT CODE WORK (no external creds needed): E2E (Playwright) + DB-backed integration tests.**
       None exist yet — current 56 tests are all pure unit tests (`src/**/*.test.ts`). Target the critical
