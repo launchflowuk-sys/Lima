@@ -29,6 +29,14 @@ export interface Draft {
   bodyText: string;
   autoSendBlockedReason: string | null;
 }
+
+/** The AI's pending suggested reply attached to a thread (from GET /threads/:id). */
+export interface ThreadDraft {
+  id: string;
+  bodyText: string;
+  status: string;
+  autoSendBlockedReason: string | null;
+}
 export interface User {
   id: string;
   email: string;
@@ -138,7 +146,10 @@ export const api = {
   me: () => request<{ user: User }>("/auth/me"),
 
   inbox: () => request<{ threads: Thread[] }>("/inbox"),
-  thread: (id: string) => request<{ thread: Thread; messages: Message[] }>(`/threads/${id}`),
+  thread: (id: string) =>
+    request<{ thread: Thread; messages: Message[]; draft: ThreadDraft | null }>(`/threads/${id}`),
+  generateDraft: (threadId: string) =>
+    request<{ draft: ThreadDraft }>(`/threads/${threadId}/draft`, { method: "POST" }),
 
   approvals: () => request<{ drafts: Draft[] }>("/approvals"),
   approve: (id: string, finalBody?: string) =>

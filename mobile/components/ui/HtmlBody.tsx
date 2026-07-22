@@ -55,10 +55,16 @@ export function HtmlBody({ html, text, width, color = colors.ink, muted = colors
   );
 
   if (hasHtml) {
+    // Drop any <img> without a real http(s) source (about:blank, cid: inline attachments,
+    // relative/tracking pixels) — RN's image loader crashes on those ("No suitable URL request
+    // handler"). Keep genuine remote images.
+    const safeHtml = (html as string).replace(/<img\b[^>]*>/gi, (tag) =>
+      /\bsrc\s*=\s*["']https?:\/\/[^"']+["']/i.test(tag) ? tag : "",
+    );
     return (
       <RenderHtml
         contentWidth={contentWidth}
-        source={{ html: html as string }}
+        source={{ html: safeHtml }}
         tagsStyles={tagsStyles}
         defaultTextProps={{ selectable: true }}
         // Constrain any inline/remote image so it never blows out the bubble width.
